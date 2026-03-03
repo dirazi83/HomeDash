@@ -1,0 +1,50 @@
+{% if calendar %}
+<div class="divide-y divide-border">
+    {% for movie in calendar %}
+    <div class="py-4">
+        <div class="flex items-start justify-between">
+            <div class="flex-1">
+                <h4 class="font-semibold text-sm">{{ movie.title }}</h4>
+                <div class="mt-1 text-xs text-muted-foreground space-y-1">
+                    {% if movie.physicalRelease %}
+                    <div>Physical Release: {{ movie.physicalRelease|date:"M d, Y" }}</div>
+                    {% elif movie.digitalRelease %}
+                    <div>Digital Release: {{ movie.digitalRelease|date:"M d, Y" }}</div>
+                    {% elif movie.inCinemas %}
+                    <div>In Cinemas: {{ movie.inCinemas|date:"M d, Y" }}</div>
+                    {% endif %}
+
+                    {% if movie.studio %}
+                    <div>Studio: {{ movie.studio }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if movie.hasFile %}
+            <span class="flex-shrink-0 inline-flex items-center px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-500 text-xs font-medium">
+                Downloaded
+            </span>
+            {% elif movie.monitored %}
+            <span class="flex-shrink-0 inline-flex items-center px-2 py-1 rounded-md bg-blue-500/10 text-blue-500 text-xs font-medium">
+                Monitored
+            </span>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="mt-4 text-sm text-muted-foreground">
+    Showing {{ calendar|length }} upcoming movie{{ calendar|length|pluralize }}
+</div>
+{% else %}
+<div class="text-center py-12">
+    <svg class="mx-auto h-12 w-12 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+        </path>
+    </svg>
+    <h3 class="mt-2 text-sm font-medium">No upcoming movies</h3>
+    <p class="mt-1 text-sm text-muted-foreground">There are no movies scheduled for release in the next 30 days.</p>
+</div>
+{% endif %}

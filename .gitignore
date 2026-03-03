@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# Django
+*.sqlite3
+*.log
+local_settings.py
+db.sqlite3
+media/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Celery
+celerybeat-schedule
+celerybeat-schedule-shm
+celerybeat-schedule-wal
+celerybeat.pid
+
+# Claude AI session data
+.claude/
+
+# Static files (collected)
+staticfiles/
+static_root/
+
+# Coverage
+.coverage
+htmlcov/

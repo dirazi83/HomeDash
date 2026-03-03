@@ -1,0 +1,279 @@
+{% extends 'base.html' %}
+
+{% block title %}Settings | HomeDash{% endblock %}
+{% block header %}Settings{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h2 class="text-2xl font-bold tracking-tight">Settings</h2>
+    <p class="text-muted-foreground mt-1 text-sm">System status, quick actions, and dashboard preferences.</p>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- Left column: status + services table -->
+    <div class="lg:col-span-2 space-y-6">
+
+        <!-- System Status Summary -->
+        <div class="grid grid-cols-3 gap-4">
+            <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-4 text-center">
+                <div class="text-2xl font-bold tracking-tight">{{ total }}</div>
+                <p class="text-xs text-muted-foreground mt-1">Total Services</p>
+            </div>
+            <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-4 text-center">
+                <div class="text-2xl font-bold tracking-tight text-emerald-500">{{ online }}</div>
+                <p class="text-xs text-muted-foreground mt-1">Online</p>
+            </div>
+            <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-4 text-center">
+                <div class="text-2xl font-bold tracking-tight {% if offline > 0 %}text-destructive{% else %}text-muted-foreground{% endif %}">{{ offline }}</div>
+                <p class="text-xs text-muted-foreground mt-1">Offline</p>
+            </div>
+        </div>
+
+        <!-- Services Table -->
+        <div class="rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden">
+            <div class="px-5 py-4 border-b border-border flex items-center justify-between">
+                <h3 class="text-sm font-medium tracking-tight">Services</h3>
+                <a href="/servers/add/"
+                    class="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Add Service
+                </a>
+            </div>
+            {% if service_rows %}
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-border bg-muted/40">
+                            <th class="text-left px-5 py-2.5 text-xs font-medium text-muted-foreground">Service</th>
+                            <th class="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground hidden sm:table-cell">Type</th>
+                            <th class="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Status</th>
+                            <th class="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground hidden md:table-cell">Version</th>
+                            <th class="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground hidden lg:table-cell">Last Checked</th>
+                            <th class="text-right px-5 py-2.5 text-xs font-medium text-muted-foreground">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-border">
+                        {% for row in service_rows %}
+                        <tr class="hover:bg-muted/20 transition-colors">
+                            <td class="px-5 py-3">
+                                <a href="{% url 'service_dashboard' row.service.pk %}" class="font-medium hover:text-primary transition-colors">
+                                    {{ row.service.name }}
+                                </a>
+                            </td>
+                            <td class="px-4 py-3 text-muted-foreground hidden sm:table-cell capitalize">
+                                {{ row.service.service_type }}
+                            </td>
+                            <td class="px-4 py-3">
+                                {% if row.service.is_active %}
+                                    {% if row.service.is_online %}
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="relative flex h-2 w-2">
+                                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                        </span>
+                                        <span class="text-emerald-500 text-xs font-medium">Online</span>
+                                    </div>
+                                    {% else %}
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="relative inline-flex rounded-full h-2 w-2 bg-destructive"></span>
+                                        <span class="text-destructive text-xs font-medium">Offline</span>
+                                    </div>
+                                    {% endif %}
+                                {% else %}
+                                <span class="text-xs text-muted-foreground">Disabled</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 text-xs text-muted-foreground hidden md:table-cell">
+                                {{ row.version|default:"—" }}
+                            </td>
+                            <td class="px-4 py-3 text-xs text-muted-foreground hidden lg:table-cell">
+                                {% if row.service.last_checked %}
+                                {{ row.service.last_checked|date:"H:i:s" }}
+                                {% else %}—{% endif %}
+                            </td>
+                            <td class="px-5 py-3 text-right">
+                                <a href="/servers/{{ row.service.pk }}/edit/"
+                                    class="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                    </svg>
+                                    Edit
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="p-8 text-center text-sm text-muted-foreground">
+                No services configured yet.
+                <a href="/servers/add/" class="text-primary hover:underline ml-1">Add one.</a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Appearance -->
+        <div class="rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden">
+            <div class="px-5 py-4 border-b border-border">
+                <h3 class="text-sm font-medium tracking-tight">Appearance</h3>
+            </div>
+            <div class="p-5 space-y-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium">Sidebar</p>
+                        <p class="text-xs text-muted-foreground">Collapse the sidebar to icon-only mode</p>
+                    </div>
+                    <button onclick="document.getElementById('sidebar-toggle').click()"
+                        class="inline-flex items-center gap-2 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3 text-sm font-medium transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path>
+                        </svg>
+                        Toggle Sidebar
+                    </button>
+                </div>
+                <div class="flex items-center justify-between border-t border-border pt-4">
+                    <div>
+                        <p class="text-sm font-medium">Theme</p>
+                        <p class="text-xs text-muted-foreground">Dark mode (forced — light mode coming soon)</p>
+                    </div>
+                    <div class="flex items-center gap-2 h-9 px-3 rounded-md border border-input bg-muted text-sm text-muted-foreground">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                        </svg>
+                        Dark
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Right column: quick actions + info -->
+    <div class="space-y-6">
+
+        <!-- Quick Actions -->
+        <div class="rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden">
+            <div class="px-5 py-4 border-b border-border">
+                <h3 class="text-sm font-medium tracking-tight">Quick Actions</h3>
+            </div>
+            <div class="p-5 space-y-3">
+
+                <!-- Trigger Poll -->
+                <div>
+                    <p class="text-sm font-medium mb-1">Trigger Poll Now</p>
+                    <p class="text-xs text-muted-foreground mb-2">Immediately queue a stats refresh for all services.</p>
+                    <div class="flex items-center gap-3">
+                        <button
+                            hx-post="{% url 'settings_trigger_poll' %}"
+                            hx-target="#poll-result"
+                            hx-swap="innerHTML"
+                            hx-indicator="#poll-spinner"
+                            class="inline-flex items-center gap-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-3 text-sm font-medium transition-colors">
+                            <svg id="poll-spinner" class="htmx-indicator w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                            </svg>
+                            <svg class="w-3.5 h-3.5 htmx-indicator-hide" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                            Poll Now
+                        </button>
+                        <span id="poll-result" class="text-xs text-muted-foreground"></span>
+                    </div>
+                </div>
+
+                <div class="border-t border-border pt-3">
+                    <p class="text-sm font-medium mb-1">Clear Cache</p>
+                    <p class="text-xs text-muted-foreground mb-2">Delete all cached service stats from Redis.</p>
+                    <div class="flex items-center gap-3">
+                        <button
+                            hx-post="{% url 'settings_clear_cache' %}"
+                            hx-target="#cache-result"
+                            hx-swap="innerHTML"
+                            class="inline-flex items-center gap-2 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3 text-sm font-medium transition-colors">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                            Clear Cache
+                        </button>
+                        <span id="cache-result" class="text-xs text-muted-foreground"></span>
+                    </div>
+                </div>
+
+                <div class="border-t border-border pt-3">
+                    <p class="text-sm font-medium mb-1">Manage Services</p>
+                    <p class="text-xs text-muted-foreground mb-2">Add, edit, or remove service integrations.</p>
+                    <a href="/servers/"
+                        class="inline-flex items-center gap-2 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3 text-sm font-medium transition-colors">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                        </svg>
+                        Servers &amp; Services
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Background Tasks Info -->
+        <div class="rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden">
+            <div class="px-5 py-4 border-b border-border">
+                <h3 class="text-sm font-medium tracking-tight">Background Tasks</h3>
+            </div>
+            <div class="p-5 space-y-3 text-sm">
+                <div class="flex justify-between items-start">
+                    <span class="text-muted-foreground">Poll interval</span>
+                    <span class="font-medium">30 seconds</span>
+                </div>
+                <div class="flex justify-between items-start border-t border-border pt-3">
+                    <span class="text-muted-foreground">Cache TTL</span>
+                    <span class="font-medium">60 seconds</span>
+                </div>
+                <div class="flex justify-between items-start border-t border-border pt-3">
+                    <span class="text-muted-foreground">Live panel refresh</span>
+                    <span class="font-medium">8 seconds</span>
+                </div>
+                <div class="flex justify-between items-start border-t border-border pt-3">
+                    <span class="text-muted-foreground">Broker</span>
+                    <span class="font-medium">Redis</span>
+                </div>
+                <div class="flex justify-between items-start border-t border-border pt-3">
+                    <span class="text-muted-foreground">Worker</span>
+                    <span class="font-medium">Celery</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- About -->
+        <div class="rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden">
+            <div class="px-5 py-4 border-b border-border">
+                <h3 class="text-sm font-medium tracking-tight">About</h3>
+            </div>
+            <div class="p-5 space-y-3 text-sm">
+                <div class="flex justify-between">
+                    <span class="text-muted-foreground">Framework</span>
+                    <span class="font-medium">Django 5.2</span>
+                </div>
+                <div class="flex justify-between border-t border-border pt-3">
+                    <span class="text-muted-foreground">UI</span>
+                    <span class="font-medium">HTMX + Tailwind</span>
+                </div>
+                <div class="flex justify-between border-t border-border pt-3">
+                    <span class="text-muted-foreground">Integrations</span>
+                    <span class="font-medium">{{ total }} configured</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<style>
+    .htmx-indicator { display: none; }
+    .htmx-request .htmx-indicator { display: inline; }
+    .htmx-request .htmx-indicator-hide { display: none; }
+</style>
+{% endblock %}

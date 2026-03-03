@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} | HomeDash{% endblock %}
+{% block header %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="flex justify-between items-center mb-6">
+    <div>
+        <h2 class="text-2xl font-bold text-white tracking-tight">{{ title }}</h2>
+    </div>
+    <a href="{% url 'service_list' %}"
+        class="px-4 py-2 text-slate-400 hover:text-white text-sm font-medium transition-colors">
+        Cancel
+    </a>
+</div>
+
+<div class="bg-cardbg rounded-xl border border-slate-700/50 p-6 shadow-lg max-w-2xl">
+    <form method="POST" class="space-y-6">
+        {% csrf_token %}
+
+        {% for field in form %}
+        <div class="flex border-b border-slate-700/50 pb-4 flex-col" data-field="{{ field.html_name }}">
+            <label class="block text-sm font-medium text-slate-300 mb-2" data-default-label="{{ field.label }}">{{ field.label }}</label>
+            {% if field.html_name == 'service_type' %}
+                {# Hidden native select (submits the value) #}
+                <div style="display:none">{{ field }}</div>
+                {# Searchable custom dropdown #}
+                <div id="service-type-dropdown" class="relative">
+                    <button type="button" id="st-trigger"
+                        class="w-full flex items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm text-left focus:outline-none focus:ring-2 focus:ring-ring">
+                        <span id="st-label" class="text-muted-foreground">Select a service type…</span>
+                        <svg class="w-4 h-4 text-muted-foreground flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+                    <div id="st-panel"
+                        class="hidden absolute z-50 mt-1 w-full rounded-md border border-border bg-popover shadow-lg overflow-hidden">
+                        <div class="p-2 border-b border-border">
+                            <input id="st-search" type="text" placeholder="Search…"
+                                class="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                                autocomplete="off">
+                        </div>
+                        <ul id="st-list" class="max-h-56 overflow-y-auto py-1"></ul>
+                    </div>
+                </div>
+            {% else %}
+                {{ field }}
+            {% endif %}
+            <p class="mt-1 text-xs text-slate-500" data-default-help="{{ field.help_text }}">{% if field.help_text %}{{ field.help_text }}{% endif %}</p>
+            {% if field.errors %}
+            <div class="mt-1 text-sm text-red-500">{{ field.errors }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        <div class="pt-4 flex justify-end">
+            <button type="submit"
+                class="px-6 py-2 bg-accent hover:bg-accenthover text-white font-medium rounded-lg transition-colors shadow-lg shadow-blue-500/20">
+                Save Service
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+/* ── Searchable service-type dropdown ─────────────────────────── */
+(function () {
+    const nativeSelect = document.querySelector('[data-field="service_type"] select');
+    const trigger      = document.getElementById('st-trigger');
+    const label        = document.getElementById('st-label');
+    const panel        = document.getElementById('st-panel');
+    const search       = document.getElementById('st-search');
+    const list         = document.getElementById('st-list');
+    if (!nativeSelect || !trigger) return;
+
+    // Build option list from the native select
+    const options = Array.from(nativeSelect.options).filter(o => o.value);
+    function renderList(filter) {
+        list.innerHTML = '';
+        const q = filter.toLowerCase();
+        const filtered = options.filter(o => o.text.toLowerCase().includes(q));
+        if (!filtered.length) {
+            list.innerHTML = '<li class="px-3 py-2 text-sm text-muted-foreground">No results.</li>';
+            return;
+        }
+        filtered.forEach(o => {
+            const li = document.createElement('li');
+            li.textContent = o.text;
+            li.dataset.value = o.value;
+            li.className = 'px-3 py-2 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground rounded-sm mx-1 transition-colors' +
+                (o.value === nativeSelect.value ? ' bg-accent/50 font-medium' : '');
+            li.addEventListener('mousedown', e => {
+                e.preventDefault();
+                selectOption(o.value, o.text);
+                closePanel();
+            });
+            list.appendChild(li);
+        });
+    }
+
+    function selectOption(value, text) {
+        nativeSelect.value = value;
+        label.textContent  = text;
+        label.classList.remove('text-muted-foreground');
+        // Fire change so applyServiceConfig picks it up
+        nativeSelect.dispatchEvent(new Event('change'));
+    }
+
+    function openPanel()  { panel.classList.remove('hidden'); search.value = ''; renderList(''); search.focus(); }
+    function closePanel() { panel.classList.add('hidden'); }
+
+    trigger.addEventListener('click', () => panel.classList.contains('hidden') ? openPanel() : closePanel());
+    search.addEventListener('input', () => renderList(search.value));
+    document.addEventListener('mousedown', e => {
+        if (!document.getElementById('service-type-dropdown').contains(e.target)) closePanel();
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
+
+    // Initialise with current value (edit page)
+    if (nativeSelect.value) {
+        const cur = options.find(o => o.value === nativeSelect.value);
+        if (cur) selectOption(cur.value, cur.text);
+    }
+})();
+
+/* ── Field label / hint overrides per service type ────────────── */
+const SERVICE_FIELD_CONFIG = {
+    jdownloader: {
+        url:            { label: "MyJDownloader URL",      help: "Cloud API endpoint — do not change.",                                                  placeholder: "https://my.jdownloader.org", prefill: "https://my.jdownloader.org" },
+        username:       { label: "MyJDownloader Email",    help: "Your my.jdownloader.org account email.",                                               placeholder: "you@example.com" },
+        api_key_input:  { label: "Device Name",            help: "Name of your JDownloader device. Leave blank to use the first available device.",       placeholder: "My PC" },
+        password_input: { label: "MyJDownloader Password", help: "Your my.jdownloader.org account password.",                                             placeholder: "••••••••" },
+    },
+    overseerr: {
+        url:            { label: "Overseerr URL",          help: "e.g. http://192.168.1.100:5055",                                                        placeholder: "http://192.168.1.100:5055" },
+        api_key_input:  { label: "API Key",                help: "Found in Overseerr → Settings → General.",                                              placeholder: "Paste API Key" },
+    },
+    prowlarr: {
+        url:            { label: "Prowlarr URL",           help: "e.g. http://192.168.1.100:9696",                                                        placeholder: "http://192.168.1.100:9696" },
+        api_key_input:  { label: "API Key",                help: "Found in Prowlarr → Settings → General.",                                               placeholder: "Paste API Key" },
+    },
+    radarr: {
+        url:            { label: "Radarr URL",             help: "e.g. http://192.168.1.100:7878",                                                        placeholder: "http://192.168.1.100:7878" },
+        api_key_input:  { label: "API Key",                help: "Found in Radarr → Settings → General.",                                                 placeholder: "Paste API Key" },
+    },
+    sonarr: {
+        url:            { label: "Sonarr URL",             help: "e.g. http://192.168.1.100:8989",                                                        placeholder: "http://192.168.1.100:8989" },
+        api_key_input:  { label: "API Key",                help: "Found in Sonarr → Settings → General.",                                                 placeholder: "Paste API Key" },
+    },
+    truenas: {
+        url:            { label: "TrueNAS URL",            help: "e.g. http://192.168.1.100",                                                             placeholder: "http://192.168.1.100" },
+        api_key_input:  { label: "API Key",                help: "Generated in TrueNAS → Credentials → API Keys.",                                        placeholder: "Paste API Key" },
+    },
+    qbittorrent: {
+        url:            { label: "qBittorrent WebUI URL",  help: "e.g. http://192.168.1.100:8080",                                                        placeholder: "http://192.168.1.100:8080" },
+        username:       { label: "Username",               help: "qBittorrent WebUI username (default: admin).",                                           placeholder: "admin" },
+        password_input: { label: "Password",               help: "qBittorrent WebUI password.",                                                            placeholder: "••••••••" },
+        api_key_input:  { label: "API Key",                help: "Not required for qBittorrent — leave blank.",                                            placeholder: "" },
+    },
+    plex: {
+        url:            { label: "Plex Server URL",        help: "e.g. http://192.168.1.100:32400",                                                       placeholder: "http://192.168.1.100:32400" },
+        api_key_input:  { label: "Plex Token",             help: "Your X-Plex-Token. Find it via Settings → Troubleshooting → Get XML for any media.",    placeholder: "Paste Plex Token" },
+        username:       { label: "Username",               help: "Not required — leave blank.",                                                            placeholder: "" },
+        password_input: { label: "Password",               help: "Not required — leave blank.",                                                            placeholder: "" },
+    },
+    tautulli: {
+        url:            { label: "Tautulli URL",           help: "e.g. http://192.168.1.100:8181",                                                        placeholder: "http://192.168.1.100:8181" },
+        api_key_input:  { label: "API Key",                help: "Found in Tautulli → Settings → Web Interface → API Key.",                               placeholder: "Paste API Key" },
+        username:       { label: "Username",               help: "Not required — leave blank.",                                                            placeholder: "" },
+        password_input: { label: "Password",               help: "Not required — leave blank.",                                                            placeholder: "" },
+    },
+    bazarr: {
+        url:            { label: "Bazarr URL",             help: "e.g. http://192.168.1.100:6767",                                                        placeholder: "http://192.168.1.100:6767" },
+        api_key_input:  { label: "API Key",                help: "Found in Bazarr → Settings → General → Security → API Key.",                            placeholder: "Paste API Key" },
+        username:       { label: "Username",               help: "Not required — leave blank.",                                                            placeholder: "" },
+        password_input: { label: "Password",               help: "Not required — leave blank.",                                                            placeholder: "" },
+    },
+    proxmox: {
+        url:            { label: "Proxmox URL",            help: "e.g. https://192.168.1.100:8006",                                                       placeholder: "https://192.168.1.100:8006" },
+        api_key_input:  { label: "API Token ID",           help: "Format: user@pam!tokenname — create in Datacenter → API Tokens.",                      placeholder: "root@pam!homelab" },
+        password_input: { label: "API Token Secret",       help: "The UUID secret shown once when creating the token.",                                    placeholder: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" },
+        username:       { label: "Username",               help: "Not required when using API token — leave blank.",                                       placeholder: "" },
+    },
+};
+
+function applyServiceConfig(serviceType) {
+    const config = SERVICE_FIELD_CONFIG[serviceType] || {};
+
+    document.querySelectorAll('[data-field]').forEach(wrapper => {
+        const fieldName = wrapper.dataset.field;
+        const label     = wrapper.querySelector('label');
+        const help      = wrapper.querySelector('p[data-default-help]');
+        const input     = wrapper.querySelector('input, select, textarea');
+
+        const overrides = config[fieldName] || {};
+
+        if (label) label.textContent = overrides.label || label.dataset.defaultLabel;
+        if (help)  help.textContent  = overrides.help !== undefined ? overrides.help : help.dataset.defaultHelp;
+        if (input && overrides.placeholder !== undefined) input.placeholder = overrides.placeholder;
+        if (input && overrides.prefill !== undefined && !input.value) input.value = overrides.prefill;
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const nativeSelect = document.querySelector('[data-field="service_type"] select');
+    if (!nativeSelect) return;
+    applyServiceConfig(nativeSelect.value);
+    nativeSelect.addEventListener('change', () => applyServiceConfig(nativeSelect.value));
+});
+</script>
+{% endblock %}

@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}HomeDash{% endblock %}</title>
+    <!-- Tailwind CSS (via CDN for rapid dev, will optimize later if needed) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: ["class"],
+            theme: {
+                container: {
+                    center: true,
+                    padding: "2rem",
+                    screens: {
+                        "2xl": "1400px",
+                    },
+                },
+                extend: {
+                    colors: {
+                        border: "hsl(var(--border))",
+                        input: "hsl(var(--input))",
+                        ring: "hsl(var(--ring))",
+                        background: "hsl(var(--background))",
+                        foreground: "hsl(var(--foreground))",
+                        primary: {
+                            DEFAULT: "hsl(var(--primary))",
+                            foreground: "hsl(var(--primary-foreground))",
+                        },
+                        secondary: {
+                            DEFAULT: "hsl(var(--secondary))",
+                            foreground: "hsl(var(--secondary-foreground))",
+                        },
+                        destructive: {
+                            DEFAULT: "hsl(var(--destructive))",
+                            foreground: "hsl(var(--destructive-foreground))",
+                        },
+                        muted: {
+                            DEFAULT: "hsl(var(--muted))",
+                            foreground: "hsl(var(--muted-foreground))",
+                        },
+                        accent: {
+                            DEFAULT: "hsl(var(--accent))",
+                            foreground: "hsl(var(--accent-foreground))",
+                        },
+                        popover: {
+                            DEFAULT: "hsl(var(--popover))",
+                            foreground: "hsl(var(--popover-foreground))",
+                        },
+                        card: {
+                            DEFAULT: "hsl(var(--card))",
+                            foreground: "hsl(var(--card-foreground))",
+                        },
+                    },
+                    borderRadius: {
+                        lg: "var(--radius)",
+                        md: "calc(var(--radius) - 2px)",
+                        sm: "calc(var(--radius) - 4px)",
+                    },
+                }
+            }
+        }
+    </script>
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.11"></script>
+    <!-- App CSS Base Styles -->
+    <style>
+        :root {
+            --background: 0 0% 100%;
+            --foreground: 240 10% 3.9%;
+            --card: 0 0% 100%;
+            --card-foreground: 240 10% 3.9%;
+            --popover: 0 0% 100%;
+            --popover-foreground: 240 10% 3.9%;
+            --primary: 240 5.9% 10%;
+            --primary-foreground: 0 0% 98%;
+            --secondary: 240 4.8% 95.9%;
+            --secondary-foreground: 240 5.9% 10%;
+            --muted: 240 4.8% 95.9%;
+            --muted-foreground: 240 3.8% 46.1%;
+            --accent: 240 4.8% 95.9%;
+            --accent-foreground: 240 5.9% 10%;
+            --destructive: 0 84.2% 60.2%;
+            --destructive-foreground: 0 0% 98%;
+            --border: 240 5.9% 90%;
+            --input: 240 5.9% 90%;
+            --ring: 240 10% 3.9%;
+            --radius: 0.5rem;
+        }
+
+        .dark {
+            --background: 240 10% 3.9%;
+            --foreground: 0 0% 98%;
+            --card: 240 10% 3.9%;
+            --card-foreground: 0 0% 98%;
+            --popover: 240 10% 3.9%;
+            --popover-foreground: 0 0% 98%;
+            --primary: 0 0% 98%;
+            --primary-foreground: 240 5.9% 10%;
+            --secondary: 240 3.7% 15.9%;
+            --secondary-foreground: 0 0% 98%;
+            --muted: 240 3.7% 15.9%;
+            --muted-foreground: 240 5% 64.9%;
+            --accent: 240 3.7% 15.9%;
+            --accent-foreground: 0 0% 98%;
+            --destructive: 0 62.8% 30.6%;
+            --destructive-foreground: 0 0% 98%;
+            --border: 240 3.7% 15.9%;
+            --input: 240 3.7% 15.9%;
+            --ring: 240 4.9% 83.9%;
+        }
+
+        body {
+            font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+            background-color: hsl(var(--background));
+            color: hsl(var(--foreground));
+        }
+
+        /* Custom scrollbar matching shadcn */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: hsl(var(--border));
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: hsl(var(--muted-foreground));
+        }
+
+        /* Sidebar collapse */
+        #sidebar {
+            width: 16rem;
+            transition: width 0.2s ease;
+            overflow: hidden;
+        }
+        #sidebar.collapsed {
+            width: 3.5rem;
+        }
+        #sidebar .sidebar-label {
+            transition: opacity 0.15s ease, width 0.2s ease;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+        #sidebar.collapsed .sidebar-label {
+            opacity: 0;
+            width: 0;
+            pointer-events: none;
+        }
+        #sidebar .sidebar-section-header {
+            transition: opacity 0.15s ease;
+        }
+        #sidebar.collapsed .sidebar-section-header {
+            opacity: 0;
+            pointer-events: none;
+            height: 0;
+            padding: 0;
+            margin: 0;
+            overflow: hidden;
+        }
+        #sidebar .sidebar-logo-text {
+            transition: opacity 0.15s ease, max-width 0.2s ease;
+            max-width: 10rem;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        #sidebar.collapsed .sidebar-logo-text {
+            opacity: 0;
+            max-width: 0;
+        }
+        #sidebar .sidebar-user-info {
+            transition: opacity 0.15s ease, max-width 0.2s ease;
+            max-width: 10rem;
+            overflow: hidden;
+        }
+        #sidebar.collapsed .sidebar-user-info {
+            opacity: 0;
+            max-width: 0;
+        }
+        #sidebar.collapsed .sidebar-nav-link {
+            justify-content: center;
+            padding-left: 0;
+            padding-right: 0;
+        }
+        #sidebar.collapsed .sidebar-dot-link {
+            justify-content: center;
+            padding-left: 0;
+            padding-right: 0;
+        }
+        #sidebar .sidebar-icon {
+            flex-shrink: 0;
+        }
+        /* Tooltip for collapsed state */
+        #sidebar.collapsed [data-tip] {
+            position: relative;
+        }
+        #sidebar.collapsed [data-tip]:hover::after {
+            content: attr(data-tip);
+            position: fixed;
+            left: 3.75rem;
+            background: hsl(var(--popover));
+            color: hsl(var(--popover-foreground));
+            border: 1px solid hsl(var(--border));
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            white-space: nowrap;
+            z-index: 9999;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            pointer-events: none;
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+
+<body class="bg-background text-foreground antialiased flex h-screen overflow-hidden"
+    hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+
+    <!-- Sidebar (Shadcn aesthetic) -->
+    <aside id="sidebar" class="bg-background border-r border-border hidden md:flex flex-col">
+        <!-- Sidebar Header -->
+        <div class="h-14 flex items-center justify-between px-3 border-b border-border flex-shrink-0">
+            <span class="text-lg font-bold tracking-tight flex items-center gap-2 overflow-hidden">
+                <svg class="sidebar-icon w-5 h-5 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6">
+                    </path>
+                </svg>
+                <span class="sidebar-logo-text">HomeDash</span>
+            </span>
+            <!-- Collapse toggle button -->
+            <button id="sidebar-toggle" title="Toggle sidebar"
+                class="flex-shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+                <svg id="sidebar-toggle-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path>
+                </svg>
+            </button>
+        </div>
+        <nav class="flex-1 overflow-y-auto py-4">
+            <ul class="space-y-1 px-2">
+                <li>
+                    <a href="/" data-tip="Dashboard"
+                        class="sidebar-nav-link flex items-center px-3 py-2 text-sm font-medium rounded-md bg-accent text-accent-foreground transition-colors">
+                        <svg class="sidebar-icon w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z">
+                            </path>
+                        </svg>
+                        <span class="sidebar-label ml-2">Dashboard</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/servers/" data-tip="Servers & Services"
+                        class="sidebar-nav-link flex items-center px-3 py-2 text-sm font-medium rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors group">
+                        <svg class="sidebar-icon w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
+                            </path>
+                        </svg>
+                        <span class="sidebar-label ml-2">Servers &amp; Services</span>
+                    </a>
+                </li>
+
+                {% if global_services %}
+                <li class="pt-4 pb-1 sidebar-section-header">
+                    <p class="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        Active Services
+                    </p>
+                </li>
+                {% for sidebar_service in global_services %}
+                <li>
+                    <a href="{% url 'service_dashboard' sidebar_service.pk %}" data-tip="{{ sidebar_service.name }}"
+                        class="sidebar-dot-link flex items-center px-3 py-2 text-sm font-medium rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors group">
+                        <span class="sidebar-icon w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0 opacity-70 group-hover:opacity-100"></span>
+                        <span class="sidebar-label ml-3 truncate">{{ sidebar_service.name }}</span>
+                    </a>
+                </li>
+                {% endfor %}
+                <li class="pb-4"></li>
+                {% endif %}
+                <li>
+                    <a href="/settings/" data-tip="Settings"
+                        class="sidebar-nav-link flex items-center px-3 py-2 text-sm font-medium rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
+                        <svg class="sidebar-icon w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
+                            </path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                        <span class="sidebar-label ml-2">Settings</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        <div class="p-3 border-t border-border flex-shrink-0">
+            <div class="flex items-center gap-3 overflow-hidden">
+                <div class="sidebar-icon h-8 w-8 rounded-full bg-primary flex-shrink-0 flex items-center justify-center text-sm font-bold text-primary-foreground shadow-sm">
+                    A</div>
+                <div class="sidebar-user-info flex-1 min-w-0">
+                    <p class="text-sm font-medium text-foreground truncate">Admin User</p>
+                    <p class="text-[11px] text-muted-foreground truncate">Administrator</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden bg-background">
+
+        <!-- Top Navbar -->
+        <header
+            class="h-14 flex items-center justify-between px-6 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border sticky top-0 z-10 transition-all">
+            <div class="flex items-center">
+                <!-- Mobile menu button -->
+                <button class="mr-4 md:hidden text-muted-foreground hover:text-foreground">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+                <h1 class="text-lg font-semibold text-foreground tracking-tight">{% block header %}Dashboard{% endblock %}</h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <button
+                    class="relative p-2 text-muted-foreground hover:text-foreground transition-colors hover:bg-accent rounded-md">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9">
+                        </path>
+                    </svg>
+                    <span
+                        class="absolute top-1.5 right-1.5 block h-2 w-2 rounded-full bg-destructive ring-2 ring-background"></span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Workspace -->
+        <main class="flex-1 overflow-y-auto p-6 md:p-8">
+            <div class="max-w-7xl mx-auto space-y-8">
+                {% block content %}
+                {% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.body.addEventListener('htmx:configRequest', (event) => {
+            event.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
+        });
+
+        // Sidebar collapse/expand
+        (function () {
+            const sidebar = document.getElementById('sidebar');
+            const toggleBtn = document.getElementById('sidebar-toggle');
+            const toggleIcon = document.getElementById('sidebar-toggle-icon');
+            if (!sidebar || !toggleBtn) return;
+
+            const COLLAPSED_KEY = 'sidebar_collapsed';
+
+            const ICON_COLLAPSE = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path>`;
+            const ICON_EXPAND   = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path>`;
+
+            function applyState(collapsed, animate) {
+                if (!animate) sidebar.style.transition = 'none';
+                if (collapsed) {
+                    sidebar.classList.add('collapsed');
+                    toggleIcon.innerHTML = ICON_EXPAND;
+                    toggleBtn.title = 'Expand sidebar';
+                } else {
+                    sidebar.classList.remove('collapsed');
+                    toggleIcon.innerHTML = ICON_COLLAPSE;
+                    toggleBtn.title = 'Collapse sidebar';
+                }
+                if (!animate) {
+                    // Force reflow then restore transition
+                    sidebar.getBoundingClientRect();
+                    sidebar.style.transition = '';
+                }
+            }
+
+            // Restore saved state immediately (no animation on load)
+            const saved = localStorage.getItem(COLLAPSED_KEY) === 'true';
+            applyState(saved, false);
+
+            toggleBtn.addEventListener('click', () => {
+                const willCollapse = !sidebar.classList.contains('collapsed');
+                applyState(willCollapse, true);
+                localStorage.setItem(COLLAPSED_KEY, willCollapse);
+            });
+        })();
+    </script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+
+</html>

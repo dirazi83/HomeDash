@@ -1,0 +1,78 @@
+{% if movies %}
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    {% for movie in movies %}
+    <div class="movie-item border border-border rounded-lg p-4 hover:bg-accent/50 transition-colors"
+         data-title="{{ movie.title }}">
+        <div class="flex items-start justify-between mb-2">
+            <div class="flex-1">
+                <h4 class="font-semibold text-sm truncate">{{ movie.title }}</h4>
+                <p class="text-xs text-muted-foreground">{{ movie.year }}</p>
+            </div>
+            {% if movie.hasFile %}
+            <span class="flex-shrink-0 inline-flex items-center px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-500 text-xs font-medium">
+                Downloaded
+            </span>
+            {% elif movie.monitored %}
+            <span class="flex-shrink-0 inline-flex items-center px-2 py-1 rounded-md bg-yellow-500/10 text-yellow-500 text-xs font-medium">
+                Monitoring
+            </span>
+            {% else %}
+            <span class="flex-shrink-0 inline-flex items-center px-2 py-1 rounded-md bg-muted text-muted-foreground text-xs font-medium">
+                Unmonitored
+            </span>
+            {% endif %}
+        </div>
+
+        <div class="mt-2 text-xs text-muted-foreground space-y-1">
+            {% if movie.qualityProfileId %}
+            <div>Quality: Profile #{{ movie.qualityProfileId }}</div>
+            {% endif %}
+            {% if movie.path %}
+            <div class="truncate" title="{{ movie.path }}">Path: {{ movie.path|truncatewords:3 }}</div>
+            {% endif %}
+        </div>
+
+        <div class="mt-3 flex gap-2">
+            <button onclick="viewMovie({{ movie.id }})"
+                class="flex-1 px-2 py-1 text-xs border border-input rounded hover:bg-accent">
+                View
+            </button>
+            <button onclick="deleteMovie({{ movie.id }}, '{{ movie.title|escapejs }}')"
+                class="px-2 py-1 text-xs border border-destructive text-destructive rounded hover:bg-destructive/10"
+                hx-post="{% url 'radarr_movie_delete' service.pk movie.id %}"
+                hx-confirm="Delete {{ movie.title }}?"
+                hx-target="closest .movie-item"
+                hx-swap="outerHTML swap:1s">
+                Delete
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="mt-6 text-sm text-muted-foreground">
+    Showing {{ movies|length }} movie{{ movies|length|pluralize }}
+</div>
+{% else %}
+<div class="text-center py-12">
+    <svg class="mx-auto h-12 w-12 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z">
+        </path>
+    </svg>
+    <h3 class="mt-2 text-sm font-medium">No movies found</h3>
+    <p class="mt-1 text-sm text-muted-foreground">Get started by adding a movie to your library.</p>
+</div>
+{% endif %}
+
+<script>
+    function viewMovie(movieId) {
+        // Future implementation: show movie details modal
+        console.log('View movie:', movieId);
+    }
+
+    function deleteMovie(movieId, title) {
+        // Confirmation handled by hx-confirm
+        console.log('Deleting movie:', movieId, title);
+    }
+</script>

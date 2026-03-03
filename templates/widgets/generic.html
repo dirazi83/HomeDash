@@ -1,0 +1,65 @@
+<a href="{% url 'service_dashboard' service.pk %}"
+    class="block rounded-xl border bg-card text-card-foreground shadow-sm p-6 relative overflow-hidden group h-48 flex flex-col justify-between hover:border-primary/50 transition-colors cursor-pointer"
+    hx-get="{% url 'widget_update' service.pk %}" hx-trigger="every 10s" hx-swap="outerHTML">
+    <!-- Gradient accent -->
+    <div
+        class="absolute -right-4 -top-4 w-32 h-32 {% if stats and stats.is_online %}bg-emerald-500/10 group-hover:bg-emerald-500/20{% else %}bg-red-500/10 group-hover:bg-red-500/20{% endif %} rounded-full blur-3xl transition-all">
+    </div>
+
+    <div class="flex items-start justify-between relative z-10">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-muted flex items-center justify-center shadow-sm border border-border">
+                <span
+                    class="text-xl font-bold {% if stats and stats.is_online %}text-emerald-500{% else %}text-muted-foreground{% endif %}">
+                    {{ service.name|slice:":1"|upper }}
+                </span>
+            </div>
+            <div>
+                <h3 class="font-semibold text-foreground tracking-tight">{{ service.name }}</h3>
+                <p class="text-xs text-muted-foreground">{{ service.get_service_type_display }}</p>
+            </div>
+        </div>
+
+        <!-- Status indicator -->
+        {% if stats %}
+        {% if stats.is_online %}
+        <span class="flex h-3 w-3 relative mt-1.5">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+        </span>
+        {% else %}
+        <span class="relative inline-flex rounded-full h-3 w-3 bg-destructive mt-1.5"></span>
+        {% endif %}
+        {% else %}
+        <!-- Loading or waiting for stats -->
+        <svg class="animate-spin -ml-1 mr-2 mt-1 h-4 w-4 text-muted-foreground" xmlns="http://www.w3.org/2000/svg"
+            fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+            </path>
+        </svg>
+        {% endif %}
+    </div>
+
+    <!-- Extra basic stats if available -->
+    <div class="mt-auto relative z-10 pt-4 border-t border-border mt-4">
+        <div class="flex justify-between items-end">
+            <div>
+                <p class="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold mb-1">Status</p>
+                {% if not stats %}
+                <p class="text-sm font-medium text-muted-foreground">Awaiting scan...</p>
+                {% elif stats.is_online %}
+                <p class="text-sm font-medium text-emerald-500">Online</p>
+                {% else %}
+                <p class="text-sm font-medium text-destructive">Offline</p>
+                {% endif %}
+            </div>
+            {% if stats and stats.last_checked %}
+            <div class="text-right">
+                <p class="text-xs text-muted-foreground">Updated: {{ stats.last_checked|slice:":19" }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</a>

@@ -1,0 +1,63 @@
+{% if queue and queue.records %}
+<div class="divide-y divide-border">
+    {% for item in queue.records %}
+    <div class="py-4 flex items-center justify-between">
+        <div class="flex-1 min-w-0">
+            <h4 class="font-semibold text-sm truncate">{{ item.title }}</h4>
+            <div class="mt-1 flex items-center gap-4 text-xs text-muted-foreground">
+                <span>{{ item.sizemb|default:"0"|floatformat:0 }} MB</span>
+                {% if item.timeleft %}
+                <span>{{ item.timeleft }}</span>
+                {% endif %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded-md
+                    {% if item.status == 'downloading' %}bg-blue-500/10 text-blue-500
+                    {% elif item.status == 'completed' %}bg-emerald-500/10 text-emerald-500
+                    {% elif item.status == 'failed' %}bg-destructive/10 text-destructive
+                    {% else %}bg-muted text-muted-foreground{% endif %}">
+                    {{ item.status|default:"queued"|title }}
+                </span>
+            </div>
+            {% if item.errorMessage %}
+            <p class="mt-1 text-xs text-destructive">{{ item.errorMessage }}</p>
+            {% endif %}
+
+            <!-- Progress bar -->
+            {% if item.status == 'downloading' and item.sizeleft %}
+            <div class="mt-2 w-full bg-muted rounded-full h-1.5">
+                {% widthratio item.sizeleft item.size 100 as percent_left %}
+                {% widthratio 100 1 1 as total %}
+                {% widthratio total percent_left 1 as percent_done %}
+                <div class="bg-blue-500 h-1.5 rounded-full transition-all"
+                     style="width: {{ percent_done }}%"></div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="ml-4 flex-shrink-0">
+            <button
+                class="px-3 py-1 text-xs border border-destructive text-destructive rounded hover:bg-destructive/10"
+                hx-post="{% url 'radarr_queue_delete' service.pk item.id %}"
+                hx-confirm="Remove {{ item.title }} from queue?"
+                hx-target="closest div[class*='py-4']"
+                hx-swap="outerHTML swap:0.5s">
+                Remove
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="mt-4 text-sm text-muted-foreground">
+    Showing {{ queue.records|length }} of {{ queue.totalRecords|default:queue.records|length }} item{{ queue.records|length|pluralize }}
+</div>
+{% else %}
+<div class="text-center py-12">
+    <svg class="mx-auto h-12 w-12 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+        </path>
+    </svg>
+    <h3 class="mt-2 text-sm font-medium">No downloads in queue</h3>
+    <p class="mt-1 text-sm text-muted-foreground">Your download queue is empty.</p>
+</div>
+{% endif %}
