@@ -14,6 +14,7 @@ build/
 venv/
 env/
 .venv/
+.clude
 
 # Django
 *.sqlite3
@@ -54,3 +55,12 @@ static_root/
 # Coverage
 .coverage
 htmlcov/
+
+COMPLETE_IMPLEMENTATION_SUMMARY.md
+IMPLEMENTATION_SUMMARY.md
+QUICK_START.md
+RADARR_API_GUIDE.md
+RADARR_IMPLEMENTATION_CHECKLIST.md
+README_RADARR_SECTION.md
+ALL_SERVICES_API_GUIDE.md
+QUICK_START.md
