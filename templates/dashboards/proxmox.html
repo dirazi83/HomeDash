@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+{% block title %}{{ service.name }} - Proxmox Dashboard{% endblock %}
+{% block header %}{{ service.name }}{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+        <h2 class="text-2xl font-bold tracking-tight">{{ service.name }}</h2>
+        <p class="text-muted-foreground mt-1 text-sm">Proxmox VE{% if stats.version %} · v{{ stats.version }}{% endif %}</p>
+    </div>
+    <a href="{{ service.url }}" target="_blank" rel="noopener noreferrer"
+        class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+        </svg>
+        Open Proxmox
+    </a>
+</div>
+
+<!-- Stats Cards -->
+<div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-6">
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-4">
+        <h3 class="text-xs font-medium text-muted-foreground tracking-tight mb-1.5">Status</h3>
+        {% if stats and stats.is_online %}
+        <div class="flex items-center gap-1.5 text-orange-500 font-medium text-sm">
+            <span class="relative flex h-2.5 w-2.5">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-orange-500"></span>
+            </span>
+            Online
+        </div>
+        {% elif stats %}
+        <div class="flex items-center gap-1.5 text-destructive font-medium text-sm">
+            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-destructive"></span>
+            Offline
+        </div>
+        {% else %}
+        <div class="text-muted-foreground text-sm">Loading…</div>
+        {% endif %}
+    </div>
+
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-4">
+        <h3 class="text-xs font-medium text-muted-foreground tracking-tight mb-1.5">Nodes</h3>
+        <div class="text-2xl font-bold tracking-tight text-orange-500">{{ stats.online_nodes|default:"0" }}</div>
+        <p class="text-xs text-muted-foreground mt-0.5">of {{ stats.total_nodes|default:"0" }} online</p>
+    </div>
+
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-4">
+        <h3 class="text-xs font-medium text-muted-foreground tracking-tight mb-1.5">VMs</h3>
+        <div class="text-2xl font-bold tracking-tight text-emerald-500">{{ stats.running_vms|default:"0" }}</div>
+        <p class="text-xs text-muted-foreground mt-0.5">{{ stats.stopped_vms|default:"0" }} stopped</p>
+    </div>
+
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-4">
+        <h3 class="text-xs font-medium text-muted-foreground tracking-tight mb-1.5">Containers</h3>
+        <div class="text-2xl font-bold tracking-tight text-sky-500">{{ stats.running_containers|default:"0" }}</div>
+        <p class="text-xs text-muted-foreground mt-0.5">{{ stats.stopped_containers|default:"0" }} stopped</p>
+    </div>
+
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-4">
+        <h3 class="text-xs font-medium text-muted-foreground tracking-tight mb-1.5">Cluster CPU</h3>
+        <div class="text-2xl font-bold tracking-tight {% if stats.cluster_cpu_pct > 80 %}text-destructive{% elif stats.cluster_cpu_pct > 60 %}text-yellow-500{% else %}text-emerald-500{% endif %}">
+            {{ stats.cluster_cpu_pct|default:"0" }}%
+        </div>
+        <p class="text-xs text-muted-foreground mt-0.5">average</p>
+    </div>
+
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-4">
+        <h3 class="text-xs font-medium text-muted-foreground tracking-tight mb-1.5">Memory</h3>
+        <div class="text-lg font-bold tracking-tight">{{ stats.cluster_mem_used|filesizeformat }}</div>
+        <p class="text-xs text-muted-foreground mt-0.5">/ {{ stats.cluster_mem_total|filesizeformat }}</p>
+    </div>
+
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-4">
+        <h3 class="text-xs font-medium text-muted-foreground tracking-tight mb-1.5">Storage</h3>
+        <div class="text-lg font-bold tracking-tight">{{ stats.cluster_disk_used|filesizeformat }}</div>
+        <p class="text-xs text-muted-foreground mt-0.5">/ {{ stats.cluster_disk_total|filesizeformat }}</p>
+    </div>
+</div>
+
+<!-- Nodes -->
+{% if stats and stats.nodes %}
+<div class="rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden mb-6">
+    <div class="px-5 py-4 border-b border-border flex items-center justify-between">
+        <h3 class="text-sm font-medium tracking-tight">Nodes</h3>
+        <span class="text-xs text-orange-500 font-medium">{{ stats.online_nodes }}/{{ stats.total_nodes }} online</span>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="border-b border-border bg-muted/40">
+                    <th class="text-left px-5 py-2.5 text-xs font-medium text-muted-foreground">Node</th>
+                    <th class="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Status</th>
+                    <th class="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">CPU</th>
+                    <th class="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Memory</th>
+                    <th class="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground hidden md:table-cell">Disk</th>
+                    <th class="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground hidden lg:table-cell">Uptime</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-border">
+                {% for node in stats.nodes %}
+                <tr class="hover:bg-muted/20 transition-colors">
+                    <td class="px-5 py-3 font-medium">{{ node.name }}</td>
+                    <td class="px-4 py-3">
+                        {% if node.status == 'online' %}
+                        <div class="flex items-center gap-1.5">
+                            <span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span></span>
+                            <span class="text-emerald-500 text-xs font-medium">Online</span>
+                        </div>
+                        {% else %}
+                        <div class="flex items-center gap-1.5">
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-destructive"></span>
+                            <span class="text-destructive text-xs font-medium">Offline</span>
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="flex items-center gap-2">
+                            <div class="w-16 bg-muted rounded-full h-1.5">
+                                <div class="h-1.5 rounded-full {% if node.cpu_pct > 80 %}bg-destructive{% elif node.cpu_pct > 60 %}bg-yellow-500{% else %}bg-orange-500{% endif %}" style="width: {{ node.cpu_pct }}%"></div>
+                            </div>
+                            <span class="text-xs font-medium">{{ node.cpu_pct }}%</span>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="flex items-center gap-2">
+                            <div class="w-16 bg-muted rounded-full h-1.5">
+                                <div class="h-1.5 rounded-full {% if node.mem_pct > 80 %}bg-destructive{% elif node.mem_pct > 60 %}bg-yellow-500{% else %}bg-sky-500{% endif %}" style="width: {{ node.mem_pct }}%"></div>
+                            </div>
+                            <span class="text-xs font-medium">{{ node.mem_pct }}%</span>
+                        </div>
+                        <p class="text-xs text-muted-foreground mt-0.5">{{ node.mem_used|filesizeformat }} / {{ node.mem_total|filesizeformat }}</p>
+                    </td>
+                    <td class="px-4 py-3 hidden md:table-cell">
+                        <div class="flex items-center gap-2">
+                            <div class="w-16 bg-muted rounded-full h-1.5">
+                                <div class="h-1.5 rounded-full bg-orange-500/60" style="width: {{ node.disk_pct }}%"></div>
+                            </div>
+                            <span class="text-xs font-medium">{{ node.disk_pct }}%</span>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3 text-xs text-muted-foreground hidden lg:table-cell">
+                        {% if node.uptime %}
+                            {% with h=node.uptime|divisibleby:3600 %}
+                            {{ node.uptime|floatformat:0 }}s
+                            {% endwith %}
+                        {% else %}—{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- Live VMs and Containers (auto-refreshes every 8s) -->
+<div id="proxmox-live-panel"
+    hx-get="{% url 'proxmox_live' service.pk %}"
+    hx-trigger="load, every 8s"
+    hx-swap="innerHTML"
+    class="mb-6">
+    <!-- Skeleton while loading -->
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden mb-6 animate-pulse">
+        <div class="px-5 py-4 border-b border-border">
+            <div class="h-4 bg-muted rounded w-32"></div>
+        </div>
+        <div class="divide-y divide-border">
+            {% for i in "123" %}
+            <div class="px-5 py-3 flex items-center gap-4">
+                <div class="h-2.5 w-2.5 rounded-full bg-muted flex-shrink-0"></div>
+                <div class="flex-1 space-y-1.5">
+                    <div class="h-3.5 bg-muted rounded w-28"></div>
+                    <div class="h-2.5 bg-muted rounded w-16"></div>
+                </div>
+                <div class="h-12 w-12 rounded-full bg-muted flex-shrink-0"></div>
+                <div class="h-12 w-12 rounded-full bg-muted flex-shrink-0"></div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- System Info -->
+<div class="rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden">
+    <div class="p-5 border-b border-border">
+        <h3 class="text-sm font-medium tracking-tight">System Information</h3>
+    </div>
+    <div class="p-5 grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div>
+            <span class="text-xs text-muted-foreground block mb-1">Version</span>
+            <span class="font-medium text-sm">{{ stats.version|default:"Unknown" }}</span>
+        </div>
+        <div>
+            <span class="text-xs text-muted-foreground block mb-1">Total VMs</span>
+            <span class="font-medium text-sm">{{ stats.total_vms|default:"0" }}</span>
+        </div>
+        <div>
+            <span class="text-xs text-muted-foreground block mb-1">Total Containers</span>
+            <span class="font-medium text-sm">{{ stats.total_containers|default:"0" }}</span>
+        </div>
+        <div>
+            <span class="text-xs text-muted-foreground block mb-1">Last Cached</span>
+            <span class="font-medium text-sm">{{ stats.last_checked|slice:":19"|default:"Unknown" }}</span>
+        </div>
+    </div>
+</div>
+{% endblock %}

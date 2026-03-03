@@ -1,0 +1,131 @@
+<div id="jd-live-panel"
+    hx-get="{% url 'jdownloader_live' service.pk %}"
+    hx-trigger="every 8s"
+    hx-swap="outerHTML">
+
+    {% if error %}
+    <div class="rounded-xl border border-destructive/30 bg-destructive/5 p-6 text-center">
+        <p class="text-sm text-destructive font-medium">Cannot reach JDownloader device</p>
+        <p class="text-xs text-muted-foreground mt-1">{{ error }}</p>
+    </div>
+
+    {% else %}
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden">
+
+        <div class="px-4 py-3 border-b border-border flex items-center justify-between gap-4">
+            <div class="flex items-center gap-2">
+                <h3 class="text-sm font-semibold tracking-tight">Live Downloads</h3>
+                <span class="text-xs text-muted-foreground">&mdash; auto-refreshes every 8s</span>
+            </div>
+            <div class="flex items-center gap-3 text-xs">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md font-medium
+                    {% if state == 'RUNNING' %}bg-emerald-500/10 text-emerald-500
+                    {% elif state == 'PAUSE' %}bg-yellow-500/10 text-yellow-500
+                    {% else %}bg-muted text-muted-foreground{% endif %}">
+                    {% if state == 'RUNNING' %}
+                    <span class="relative flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    {% endif %}
+                    {{ state }}
+                </span>
+                <span class="text-muted-foreground">
+                    <span class="font-medium text-foreground">{{ speed_bytes|filesizeformat }}/s</span>
+                </span>
+            </div>
+        </div>
+
+        {% if packages %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-xs">
+                <thead>
+                    <tr class="border-b border-border bg-muted/40 text-muted-foreground">
+                        <th class="text-left px-4 py-2 font-medium">Name</th>
+                        <th class="text-right px-3 py-2 font-medium whitespace-nowrap">Size</th>
+                        <th class="text-left px-3 py-2 font-medium hidden md:table-cell">Hoster</th>
+                        <th class="text-left px-3 py-2 font-medium">Status</th>
+                        <th class="text-right px-3 py-2 font-medium hidden sm:table-cell">Speed</th>
+                        <th class="text-right px-3 py-2 font-medium hidden sm:table-cell">ETA</th>
+                        <th class="text-right px-3 py-2 font-medium whitespace-nowrap">Loaded</th>
+                        <th class="px-3 py-2 font-medium w-28">Progress</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-border">
+                    {% for pkg in packages %}
+                    <tr class="hover:bg-muted/30 transition-colors
+                        {% if pkg.running %}bg-emerald-500/5{% elif pkg.finished %}bg-blue-500/5{% endif %}">
+                        <td class="px-4 py-2.5 max-w-xs">
+                            <div class="flex items-center gap-2">
+                                {% if pkg.running %}
+                                <span class="flex-shrink-0 relative flex h-2 w-2">
+                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                </span>
+                                {% elif pkg.finished %}
+                                <svg class="flex-shrink-0 w-3 h-3 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                </svg>
+                                {% else %}
+                                <span class="flex-shrink-0 h-2 w-2 rounded-full bg-muted-foreground/40"></span>
+                                {% endif %}
+                                <span class="truncate font-medium text-foreground" title="{{ pkg.name }}">{{ pkg.name|default:"Unnamed" }}</span>
+                                <span class="flex-shrink-0 text-muted-foreground">[{{ pkg.childCount|default:"0" }}]</span>
+                            </div>
+                        </td>
+                        <td class="px-3 py-2.5 text-right text-muted-foreground whitespace-nowrap">
+                            {% if pkg.bytesTotal %}{{ pkg.bytesTotal|filesizeformat }}{% else %}&mdash;{% endif %}
+                        </td>
+                        <td class="px-3 py-2.5 text-muted-foreground hidden md:table-cell">
+                            {% if pkg.hosts %}{% for h in pkg.hosts %}{{ h }}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}&mdash;{% endif %}
+                        </td>
+                        <td class="px-3 py-2.5">
+                            {% if pkg.running %}<span class="text-emerald-500 font-medium">Downloading</span>
+                            {% elif pkg.finished %}
+                                {% if pkg.status %}<span class="text-blue-400">{{ pkg.status }}</span>
+                                {% else %}<span class="text-blue-500 font-medium">Finished</span>{% endif %}
+                            {% elif pkg.enabled %}<span class="text-yellow-500">Queued</span>
+                            {% else %}<span class="text-muted-foreground">Stopped</span>{% endif %}
+                        </td>
+                        <td class="px-3 py-2.5 text-right text-muted-foreground whitespace-nowrap hidden sm:table-cell">
+                            {% if pkg.speed and pkg.speed > 0 %}<span class="text-emerald-500 font-medium">{{ pkg.speed|filesizeformat }}/s</span>{% else %}&mdash;{% endif %}
+                        </td>
+                        <td class="px-3 py-2.5 text-right text-muted-foreground whitespace-nowrap hidden sm:table-cell">
+                            {% if pkg.display_eta %}{{ pkg.display_eta }}{% else %}&mdash;{% endif %}
+                        </td>
+                        <td class="px-3 py-2.5 text-right text-muted-foreground whitespace-nowrap">
+                            {% if pkg.bytesLoaded %}{{ pkg.bytesLoaded|filesizeformat }}{% else %}&mdash;{% endif %}
+                        </td>
+                        <td class="px-3 py-2.5 w-28">
+                            {% if pkg.bytesTotal and pkg.bytesTotal > 0 %}
+                            {% widthratio pkg.bytesLoaded pkg.bytesTotal 100 as pct %}
+                            <div class="flex items-center gap-1.5">
+                                <div class="flex-1 bg-muted rounded-full h-2 min-w-0">
+                                    <div class="{% if pkg.finished %}bg-blue-500{% elif pkg.running %}bg-emerald-500{% else %}bg-muted-foreground/50{% endif %} h-2 rounded-full transition-all"
+                                        style="width:{{ pct }}%"></div>
+                                </div>
+                                <span class="flex-shrink-0 text-muted-foreground w-8 text-right">{{ pct }}%</span>
+                            </div>
+                            {% else %}<span class="text-muted-foreground">—</span>{% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="p-8 text-center text-sm text-muted-foreground italic">No packages in the download list.</div>
+        {% endif %}
+
+        <div class="px-4 py-2.5 border-t border-border bg-muted/30 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-muted-foreground">
+            <span><span class="text-foreground font-medium">{{ packages|length }}</span> package{{ packages|length|pluralize }}</span>
+            <span><span class="text-foreground font-medium">{{ link_count }}</span> link{{ link_count|pluralize }}</span>
+            <span>Total: <span class="text-foreground font-medium">{{ total_bytes|filesizeformat }}</span></span>
+            <span>Loaded: <span class="text-foreground font-medium">{{ loaded_bytes|filesizeformat }}</span></span>
+            <span>Speed: <span class="{% if speed_bytes > 0 %}text-emerald-500{% else %}text-foreground{% endif %} font-medium">{{ speed_bytes|filesizeformat }}/s</span></span>
+            <span>Running: <span class="{% if running_downloads > 0 %}text-emerald-500{% else %}text-foreground{% endif %} font-medium">{{ running_downloads }}</span></span>
+        </div>
+    </div>
+    {% endif %}
+
+</div>

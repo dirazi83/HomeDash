@@ -1,0 +1,22 @@
+{% if service.last_checked %}
+{% if service.is_online %}
+<span
+    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5"></span>
+    Online
+</span>
+{% else %}
+<span
+    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20">
+    <span class="w-1.5 h-1.5 rounded-full bg-red-400 mr-1.5"></span>
+    Offline
+</span>
+{% endif %}
+<div class="text-[10px] text-slate-500 mt-1">Tested: {{ service.last_checked|timesince }} ago</div>
+{% else %}
+<span
+    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-500/10 text-slate-400 border border-slate-500/20">
+    <span class="w-1.5 h-1.5 rounded-full bg-slate-400 mr-1.5"></span>
+    Untested
+</span>
+{% endif %}

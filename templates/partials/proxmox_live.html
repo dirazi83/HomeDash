@@ -1,0 +1,126 @@
+{% if error %}
+<div class="text-sm text-destructive px-1">{{ error }}</div>
+{% else %}
+
+<!-- Virtual Machines -->
+{% if vms %}
+<div class="rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden mb-6">
+    <div class="px-5 py-4 border-b border-border flex items-center justify-between">
+        <h3 class="text-sm font-medium tracking-tight">Virtual Machines</h3>
+        <span class="text-emerald-500 font-medium text-xs">{{ vms|length }} total</span>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-0 divide-y divide-border sm:divide-y-0">
+        {% for vm in vms %}
+        <div class="px-4 py-3 flex items-center gap-4 {% if not forloop.last %}sm:border-r border-border{% endif %}">
+            <span class="relative flex h-2.5 w-2.5 flex-shrink-0">
+                {% if vm.status == 'running' %}
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                {% else %}
+                <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-muted-foreground/40"></span>
+                {% endif %}
+            </span>
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-1.5">
+                    <span class="text-sm font-medium truncate">{{ vm.name }}</span>
+                    <span class="text-xs text-muted-foreground flex-shrink-0">#{{ vm.vmid }}</span>
+                </div>
+                <p class="text-xs text-muted-foreground">{{ vm.node }}</p>
+            </div>
+            {% if vm.status == 'running' %}
+            <div class="flex flex-col items-center gap-0.5 flex-shrink-0">
+                <div class="relative w-12 h-12">
+                    <svg viewBox="0 0 36 36" class="w-12 h-12 -rotate-90">
+                        <circle cx="18" cy="18" r="15.9155" fill="none" stroke-width="3" class="text-muted-foreground/20" stroke="currentColor"/>
+                        <circle cx="18" cy="18" r="15.9155" fill="none" stroke-width="3" stroke-linecap="round"
+                            style="stroke-dasharray: {{ vm.cpu_pct }} 100; stroke-dashoffset: 0;"
+                            class="{% if vm.cpu_pct > 80 %}text-destructive{% elif vm.cpu_pct > 60 %}text-yellow-500{% else %}text-orange-500{% endif %}" stroke="currentColor"/>
+                    </svg>
+                    <span class="absolute inset-0 flex items-center justify-center text-[10px] font-semibold">{{ vm.cpu_pct }}%</span>
+                </div>
+                <span class="text-[10px] text-muted-foreground">CPU</span>
+            </div>
+            <div class="flex flex-col items-center gap-0.5 flex-shrink-0">
+                <div class="relative w-12 h-12">
+                    <svg viewBox="0 0 36 36" class="w-12 h-12 -rotate-90">
+                        <circle cx="18" cy="18" r="15.9155" fill="none" stroke-width="3" class="text-muted-foreground/20" stroke="currentColor"/>
+                        <circle cx="18" cy="18" r="15.9155" fill="none" stroke-width="3" stroke-linecap="round"
+                            style="stroke-dasharray: {{ vm.mem_pct }} 100; stroke-dashoffset: 0;"
+                            class="{% if vm.mem_pct > 80 %}text-destructive{% elif vm.mem_pct > 60 %}text-yellow-500{% else %}text-sky-500{% endif %}" stroke="currentColor"/>
+                    </svg>
+                    <span class="absolute inset-0 flex items-center justify-center text-[10px] font-semibold">{{ vm.mem_pct }}%</span>
+                </div>
+                <span class="text-[10px] text-muted-foreground">RAM</span>
+            </div>
+            {% else %}
+            <span class="text-xs text-muted-foreground capitalize px-1">{{ vm.status }}</span>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- LXC Containers -->
+{% if containers %}
+<div class="rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden">
+    <div class="px-5 py-4 border-b border-border flex items-center justify-between">
+        <h3 class="text-sm font-medium tracking-tight">LXC Containers</h3>
+        <span class="text-sky-500 font-medium text-xs">{{ containers|length }} total</span>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-0 divide-y divide-border sm:divide-y-0">
+        {% for ct in containers %}
+        <div class="px-4 py-3 flex items-center gap-4 {% if not forloop.last %}sm:border-r border-border{% endif %}">
+            <span class="relative flex h-2.5 w-2.5 flex-shrink-0">
+                {% if ct.status == 'running' %}
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-sky-500"></span>
+                {% else %}
+                <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-muted-foreground/40"></span>
+                {% endif %}
+            </span>
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-1.5">
+                    <span class="text-sm font-medium truncate">{{ ct.name }}</span>
+                    <span class="text-xs text-muted-foreground flex-shrink-0">#{{ ct.vmid }}</span>
+                </div>
+                <p class="text-xs text-muted-foreground">{{ ct.node }}</p>
+            </div>
+            {% if ct.status == 'running' %}
+            <div class="flex flex-col items-center gap-0.5 flex-shrink-0">
+                <div class="relative w-12 h-12">
+                    <svg viewBox="0 0 36 36" class="w-12 h-12 -rotate-90">
+                        <circle cx="18" cy="18" r="15.9155" fill="none" stroke-width="3" class="text-muted-foreground/20" stroke="currentColor"/>
+                        <circle cx="18" cy="18" r="15.9155" fill="none" stroke-width="3" stroke-linecap="round"
+                            style="stroke-dasharray: {{ ct.cpu_pct }} 100; stroke-dashoffset: 0;"
+                            class="{% if ct.cpu_pct > 80 %}text-destructive{% elif ct.cpu_pct > 60 %}text-yellow-500{% else %}text-orange-500{% endif %}" stroke="currentColor"/>
+                    </svg>
+                    <span class="absolute inset-0 flex items-center justify-center text-[10px] font-semibold">{{ ct.cpu_pct }}%</span>
+                </div>
+                <span class="text-[10px] text-muted-foreground">CPU</span>
+            </div>
+            <div class="flex flex-col items-center gap-0.5 flex-shrink-0">
+                <div class="relative w-12 h-12">
+                    <svg viewBox="0 0 36 36" class="w-12 h-12 -rotate-90">
+                        <circle cx="18" cy="18" r="15.9155" fill="none" stroke-width="3" class="text-muted-foreground/20" stroke="currentColor"/>
+                        <circle cx="18" cy="18" r="15.9155" fill="none" stroke-width="3" stroke-linecap="round"
+                            style="stroke-dasharray: {{ ct.mem_pct }} 100; stroke-dashoffset: 0;"
+                            class="{% if ct.mem_pct > 80 %}text-destructive{% elif ct.mem_pct > 60 %}text-yellow-500{% else %}text-sky-500{% endif %}" stroke="currentColor"/>
+                    </svg>
+                    <span class="absolute inset-0 flex items-center justify-center text-[10px] font-semibold">{{ ct.mem_pct }}%</span>
+                </div>
+                <span class="text-[10px] text-muted-foreground">RAM</span>
+            </div>
+            {% else %}
+            <span class="text-xs text-muted-foreground capitalize px-1">{{ ct.status }}</span>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% if not vms and not containers %}
+<div class="text-sm text-muted-foreground italic px-1">No VMs or containers found.</div>
+{% endif %}
+{% endif %}

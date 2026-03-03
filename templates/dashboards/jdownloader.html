@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+{% block title %}{{ service.name }} - JDownloader Dashboard{% endblock %}
+{% block header %}{{ service.name }}{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+        <h2 class="text-2xl font-bold tracking-tight">{{ service.name }} Overview</h2>
+        <p class="text-muted-foreground mt-1 text-sm">
+            Download Manager
+            {% if stats.device_name %}&mdash; <span class="font-medium">{{ stats.device_name }}</span>{% endif %}
+        </p>
+    </div>
+    <a href="{{ service.url }}" target="_blank" rel="noopener noreferrer"
+        class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+        </svg>
+        My JDownloader
+    </a>
+</div>
+
+<!-- Stats Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-6">
+        <h3 class="text-sm font-medium text-muted-foreground tracking-tight mb-2">Status</h3>
+        {% if stats and stats.is_online %}
+        <div class="flex items-center gap-2 text-emerald-500 font-medium">
+            <span class="relative flex h-3 w-3">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+            </span>
+            Online
+        </div>
+        {% elif stats %}
+        <div class="flex items-center gap-2 text-destructive font-medium">
+            <span class="relative inline-flex rounded-full h-3 w-3 bg-destructive"></span>
+            Offline
+        </div>
+        {% else %}
+        <div class="flex items-center gap-2 text-muted-foreground font-medium">
+            <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                </path>
+            </svg>
+            Loading
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-6">
+        <h3 class="text-sm font-medium text-muted-foreground tracking-tight mb-2">State</h3>
+        <div class="text-2xl font-bold tracking-tight
+            {% if stats.state == 'RUNNING' %}text-emerald-500
+            {% elif stats.state == 'PAUSE' %}text-yellow-500
+            {% else %}text-muted-foreground{% endif %}">
+            {{ stats.state|default:"—" }}
+        </div>
+        <p class="text-xs text-muted-foreground mt-1">Download controller</p>
+    </div>
+
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-6">
+        <h3 class="text-sm font-medium text-muted-foreground tracking-tight mb-2">Speed</h3>
+        <div class="text-3xl font-bold tracking-tight text-emerald-500">{{ stats.speed_bytes|filesizeformat }}</div>
+        <p class="text-xs text-muted-foreground mt-1">per second</p>
+    </div>
+
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-6">
+        <h3 class="text-sm font-medium text-muted-foreground tracking-tight mb-2">Active</h3>
+        <div class="text-3xl font-bold tracking-tight text-emerald-500">{{ stats.active_downloads|default:"0" }}</div>
+        <p class="text-xs text-muted-foreground mt-1">of {{ stats.total_packages|default:"0" }} packages</p>
+    </div>
+
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-6">
+        <h3 class="text-sm font-medium text-muted-foreground tracking-tight mb-2">Finished</h3>
+        <div class="text-3xl font-bold tracking-tight text-blue-500">{{ stats.finished_packages|default:"0" }}</div>
+        <p class="text-xs text-muted-foreground mt-1">Completed packages</p>
+    </div>
+</div>
+
+<!-- Overall Progress -->
+{% if stats.is_online and stats.total_bytes %}
+<div class="rounded-xl border bg-card text-card-foreground shadow-sm p-6 mb-6">
+    <div class="flex justify-between text-sm mb-3">
+        <span class="font-medium">Overall Progress</span>
+        <span class="text-muted-foreground">
+            {{ stats.loaded_bytes|filesizeformat }} of {{ stats.total_bytes|filesizeformat }}
+        </span>
+    </div>
+    <div class="w-full bg-muted rounded-full h-3">
+        {% widthratio stats.loaded_bytes stats.total_bytes 100 as overall_percent %}
+        <div class="bg-emerald-500 h-3 rounded-full transition-all" style="width: {{ overall_percent }}%"></div>
+    </div>
+    <p class="text-xs text-muted-foreground mt-2">{{ overall_percent }}% downloaded</p>
+</div>
+{% endif %}
+
+<!-- Package List -->
+{% if stats.packages %}
+<div class="rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden mb-6">
+    <div class="p-6 border-b border-border flex items-center justify-between">
+        <h3 class="text-lg font-medium tracking-tight">Packages</h3>
+        {% if stats.total_packages > 10 %}
+        <span class="text-xs text-muted-foreground">Showing 10 of {{ stats.total_packages }}</span>
+        {% endif %}
+    </div>
+    <div class="divide-y divide-border">
+        {% for pkg in stats.packages %}
+        <div class="p-4">
+            <div class="flex justify-between items-start gap-4 mb-2">
+                <div class="flex-1 min-w-0">
+                    <h4 class="font-medium text-foreground truncate">{{ pkg.name|default:"Unnamed Package" }}</h4>
+                    <div class="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                        <span>{{ pkg.childCount|default:"0" }} file{{ pkg.childCount|pluralize }}</span>
+                        {% if pkg.eta and pkg.eta > 0 %}
+                        <span>&middot; ETA {{ pkg.eta }}s</span>
+                        {% endif %}
+                        {% if pkg.saveTo %}
+                        <span class="truncate hidden sm:block">&middot; {{ pkg.saveTo }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="flex-shrink-0 flex items-center gap-2">
+                    {% if pkg.running %}
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-emerald-500/10 text-emerald-500">
+                        <span class="relative flex h-2 w-2">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span>
+                        Downloading
+                    </span>
+                    {% elif pkg.finished %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-blue-500/10 text-blue-500">Done</span>
+                    {% elif pkg.enabled %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-yellow-500/10 text-yellow-500">Queued</span>
+                    {% else %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-muted text-muted-foreground">Disabled</span>
+                    {% endif %}
+                    {% if pkg.speed and pkg.speed > 0 %}
+                    <span class="text-xs text-muted-foreground">{{ pkg.speed|filesizeformat }}/s</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% if pkg.bytesTotal and pkg.bytesTotal > 0 %}
+            <div class="w-full bg-muted rounded-full h-1.5 mt-2">
+                {% widthratio pkg.bytesLoaded pkg.bytesTotal 100 as pkg_percent %}
+                <div class="{% if pkg.finished %}bg-blue-500{% else %}bg-emerald-500{% endif %} h-1.5 rounded-full"
+                    style="width: {{ pkg_percent }}%"></div>
+            </div>
+            <div class="flex justify-between text-xs text-muted-foreground mt-1">
+                <span>{{ pkg.bytesLoaded|filesizeformat }}</span>
+                <span>{{ pkg.bytesTotal|filesizeformat }}</span>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Live Downloads GUI View -->
+{% if stats and stats.is_online %}
+<div class="mb-6"
+    hx-get="{% url 'jdownloader_live' service.pk %}"
+    hx-trigger="load"
+    hx-swap="innerHTML">
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-8 flex items-center justify-center gap-3 text-sm text-muted-foreground">
+        <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        Connecting to JDownloader device…
+    </div>
+</div>
+{% endif %}
+
+<!-- System Info -->
+<div class="rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden">
+    <div class="p-6 border-b border-border">
+        <h3 class="text-lg font-medium tracking-tight">System Information</h3>
+    </div>
+    <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+            <span class="text-sm text-muted-foreground block mb-1">Device</span>
+            <span class="font-medium text-sm">{{ stats.device_name|default:"Unknown" }}</span>
+        </div>
+        <div>
+            <span class="text-sm text-muted-foreground block mb-1">Total Downloaded</span>
+            <span class="font-medium text-sm">{{ stats.loaded_bytes|filesizeformat }}</span>
+        </div>
+        <div>
+            <span class="text-sm text-muted-foreground block mb-1">Last Cached</span>
+            <span class="font-medium text-sm">{{ stats.last_checked|slice:":19"|default:"Unknown" }}</span>
+        </div>
+    </div>
+</div>
+{% endblock %}

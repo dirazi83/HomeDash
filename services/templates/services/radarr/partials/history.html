@@ -1,0 +1,55 @@
+{% if history and history.records %}
+<div class="divide-y divide-border">
+    {% for item in history.records %}
+    <div class="py-4">
+        <div class="flex items-start justify-between">
+            <div class="flex-1">
+                <div class="flex items-center gap-2">
+                    <h4 class="font-semibold text-sm">{{ item.sourceTitle|default:item.movie.title }}</h4>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs
+                        {% if item.eventType == 'grabbed' %}bg-blue-500/10 text-blue-500
+                        {% elif item.eventType == 'downloadFolderImported' %}bg-emerald-500/10 text-emerald-500
+                        {% elif item.eventType == 'downloadFailed' %}bg-destructive/10 text-destructive
+                        {% else %}bg-muted text-muted-foreground{% endif %}">
+                        {{ item.eventType|default:"unknown"|title }}
+                    </span>
+                </div>
+
+                <div class="mt-1 text-xs text-muted-foreground space-y-0.5">
+                    <div>{{ item.date|date:"M d, Y H:i" }}</div>
+                    {% if item.data.downloadClient %}
+                    <div>Client: {{ item.data.downloadClient }}</div>
+                    {% endif %}
+                    {% if item.data.indexer %}
+                    <div>Indexer: {{ item.data.indexer }}</div>
+                    {% endif %}
+                </div>
+
+                {% if item.data.reason %}
+                <p class="mt-1 text-xs text-muted-foreground">{{ item.data.reason }}</p>
+                {% endif %}
+            </div>
+
+            {% if item.quality %}
+            <span class="flex-shrink-0 text-xs text-muted-foreground">
+                {{ item.quality.quality.name }}
+            </span>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="mt-4 text-sm text-muted-foreground">
+    Showing {{ history.records|length }} of {{ history.totalRecords|default:history.records|length }} event{{ history.records|length|pluralize }}
+</div>
+{% else %}
+<div class="text-center py-12">
+    <svg class="mx-auto h-12 w-12 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+    </svg>
+    <h3 class="mt-2 text-sm font-medium">No history</h3>
+    <p class="mt-1 text-sm text-muted-foreground">No download activity recorded yet.</p>
+</div>
+{% endif %}

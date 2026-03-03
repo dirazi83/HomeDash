@@ -1,0 +1,224 @@
+{% extends 'base.html' %}
+{% block title %}{{ service.name }} - Tautulli Dashboard{% endblock %}
+{% block header %}{{ service.name }}{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+        <h2 class="text-2xl font-bold tracking-tight">{{ service.name }}</h2>
+        <p class="text-muted-foreground mt-1 text-sm">Plex Analytics{% if stats.server_name %} — {{ stats.server_name }}{% endif %}</p>
+    </div>
+    <a href="{{ service.url }}" target="_blank" rel="noopener noreferrer"
+        class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+        </svg>
+        Open Tautulli
+    </a>
+</div>
+
+<!-- Stats Cards -->
+<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-4">
+        <h3 class="text-xs font-medium text-muted-foreground tracking-tight mb-1.5">Status</h3>
+        {% if stats and stats.is_online %}
+        <div class="flex items-center gap-1.5 text-indigo-500 font-medium text-sm">
+            <span class="relative flex h-2.5 w-2.5">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-500"></span>
+            </span>
+            Online
+        </div>
+        {% elif stats %}
+        <div class="flex items-center gap-1.5 text-destructive font-medium text-sm">
+            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-destructive"></span>
+            Offline
+        </div>
+        {% else %}
+        <div class="text-muted-foreground text-sm">Loading…</div>
+        {% endif %}
+    </div>
+
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-4">
+        <h3 class="text-xs font-medium text-muted-foreground tracking-tight mb-1.5">Active Streams</h3>
+        <div class="text-2xl font-bold tracking-tight text-indigo-500">{{ stats.active_streams|default:"0" }}</div>
+        <p class="text-xs text-muted-foreground mt-0.5">now playing</p>
+    </div>
+
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-4">
+        <h3 class="text-xs font-medium text-muted-foreground tracking-tight mb-1.5">Direct Play</h3>
+        <div class="text-2xl font-bold tracking-tight text-emerald-500">{{ stats.stream_count_direct_play|default:"0" }}</div>
+        <p class="text-xs text-muted-foreground mt-0.5">no conversion</p>
+    </div>
+
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-4">
+        <h3 class="text-xs font-medium text-muted-foreground tracking-tight mb-1.5">Transcoding</h3>
+        <div class="text-2xl font-bold tracking-tight text-orange-500">{{ stats.stream_count_transcode|default:"0" }}</div>
+        <p class="text-xs text-muted-foreground mt-0.5">converting</p>
+    </div>
+
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-4">
+        <h3 class="text-xs font-medium text-muted-foreground tracking-tight mb-1.5">Direct Stream</h3>
+        <div class="text-2xl font-bold tracking-tight text-sky-500">{{ stats.stream_count_direct_stream|default:"0" }}</div>
+        <p class="text-xs text-muted-foreground mt-0.5">remuxing</p>
+    </div>
+</div>
+
+<!-- Active Sessions -->
+{% if stats and stats.sessions %}
+<div class="rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden mb-6">
+    <div class="px-5 py-4 border-b border-border flex items-center justify-between">
+        <h3 class="text-sm font-medium tracking-tight">Active Sessions</h3>
+        <span class="text-xs text-indigo-500 font-medium px-2 py-0.5 bg-indigo-500/10 rounded-full">
+            {{ stats.active_streams }} stream{{ stats.active_streams|pluralize }}
+        </span>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="border-b border-border bg-muted/40">
+                    <th class="text-left px-5 py-2.5 text-xs font-medium text-muted-foreground">User</th>
+                    <th class="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Title</th>
+                    <th class="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground hidden sm:table-cell">Player</th>
+                    <th class="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground hidden md:table-cell">Quality</th>
+                    <th class="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground hidden md:table-cell">Mode</th>
+                    <th class="text-right px-5 py-2.5 text-xs font-medium text-muted-foreground">Progress</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-border">
+                {% for s in stats.sessions %}
+                <tr class="hover:bg-muted/20 transition-colors">
+                    <td class="px-5 py-3">
+                        <span class="font-medium">{{ s.friendly_name|default:s.username }}</span>
+                    </td>
+                    <td class="px-4 py-3 max-w-[200px]">
+                        <p class="font-medium truncate">{{ s.full_title|default:s.title }}</p>
+                        <p class="text-xs text-muted-foreground">{{ s.year|default:"" }}</p>
+                    </td>
+                    <td class="px-4 py-3 text-muted-foreground hidden sm:table-cell">{{ s.player|default:"—" }}</td>
+                    <td class="px-4 py-3 hidden md:table-cell">
+                        <span class="text-xs">{{ s.quality_profile|default:"—" }}</span>
+                    </td>
+                    <td class="px-4 py-3 hidden md:table-cell">
+                        {% if s.transcode_decision == 'transcode' %}
+                        <span class="text-xs text-orange-500 font-medium">Transcode</span>
+                        {% elif s.transcode_decision == 'copy' %}
+                        <span class="text-xs text-sky-500 font-medium">Direct Stream</span>
+                        {% else %}
+                        <span class="text-xs text-emerald-500 font-medium">Direct Play</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-5 py-3 text-right">
+                        <div class="flex items-center justify-end gap-2">
+                            <div class="w-16 bg-muted rounded-full h-1.5">
+                                <div class="bg-indigo-500 h-1.5 rounded-full" style="width: {{ s.progress_percent|default:0 }}%"></div>
+                            </div>
+                            <span class="text-xs text-muted-foreground">{{ s.progress_percent|default:0 }}%</span>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% elif stats and stats.is_online %}
+<div class="rounded-xl border bg-card text-card-foreground shadow-sm p-6 text-center text-sm text-muted-foreground mb-6">
+    No active sessions right now.
+</div>
+{% endif %}
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <!-- Recently Added -->
+    {% if stats and stats.recently_added %}
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden">
+        <div class="px-5 py-4 border-b border-border">
+            <h3 class="text-sm font-medium tracking-tight">Recently Added</h3>
+        </div>
+        <div class="divide-y divide-border">
+            {% for item in stats.recently_added %}
+            <div class="px-5 py-3 flex items-center gap-3">
+                <div class="w-7 h-7 rounded bg-indigo-500/10 flex items-center justify-center flex-shrink-0">
+                    {% if item.media_type == 'episode' %}
+                    <svg class="w-3.5 h-3.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.069A1 1 0 0121 8.82v6.36a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"></path>
+                    </svg>
+                    {% else %}
+                    <svg class="w-3.5 h-3.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"></path>
+                    </svg>
+                    {% endif %}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium truncate">{{ item.title }}</p>
+                    <p class="text-xs text-muted-foreground">{{ item.media_type|default:""|capfirst }}{% if item.year %} · {{ item.year }}{% endif %}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Top Content -->
+    <div class="space-y-4">
+        {% if stats.top_movies %}
+        <div class="rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden">
+            <div class="px-5 py-4 border-b border-border">
+                <h3 class="text-sm font-medium tracking-tight">Top Movies <span class="text-xs text-muted-foreground font-normal ml-1">last 7 days</span></h3>
+            </div>
+            <div class="divide-y divide-border">
+                {% for item in stats.top_movies %}
+                <div class="px-5 py-2.5 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-muted-foreground w-4 text-right">{{ forloop.counter }}.</span>
+                        <span class="text-sm font-medium">{{ item.title }}</span>
+                    </div>
+                    <span class="text-xs text-muted-foreground">{{ item.total_plays }} play{{ item.total_plays|pluralize }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if stats.top_shows %}
+        <div class="rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden">
+            <div class="px-5 py-4 border-b border-border">
+                <h3 class="text-sm font-medium tracking-tight">Top TV Shows <span class="text-xs text-muted-foreground font-normal ml-1">last 7 days</span></h3>
+            </div>
+            <div class="divide-y divide-border">
+                {% for item in stats.top_shows %}
+                <div class="px-5 py-2.5 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-muted-foreground w-4 text-right">{{ forloop.counter }}.</span>
+                        <span class="text-sm font-medium">{{ item.title }}</span>
+                    </div>
+                    <span class="text-xs text-muted-foreground">{{ item.total_plays }} play{{ item.total_plays|pluralize }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- System Info -->
+<div class="rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden">
+    <div class="p-5 border-b border-border">
+        <h3 class="text-sm font-medium tracking-tight">System Information</h3>
+    </div>
+    <div class="p-5 grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div>
+            <span class="text-xs text-muted-foreground block mb-1">Plex Server</span>
+            <span class="font-medium text-sm">{{ stats.server_name|default:"Unknown" }}</span>
+        </div>
+        <div>
+            <span class="text-xs text-muted-foreground block mb-1">Plex Version</span>
+            <span class="font-medium text-sm">{{ stats.version|default:"Unknown" }}</span>
+        </div>
+        <div>
+            <span class="text-xs text-muted-foreground block mb-1">Last Cached</span>
+            <span class="font-medium text-sm">{{ stats.last_checked|slice:":19"|default:"Unknown" }}</span>
+        </div>
+    </div>
+</div>
+{% endblock %}
