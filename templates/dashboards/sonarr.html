@@ -19,6 +19,12 @@
 </div>
 
 <!-- Stats Cards -->
+<div id="stats-cards"
+     hx-get="{{ request.get_full_path }}"
+     hx-trigger="every 15s"
+     hx-select="#stats-cards"
+     hx-target="#stats-cards"
+     hx-swap="outerHTML">
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
     <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-6">
         <h3 class="text-sm font-medium text-muted-foreground tracking-tight mb-2">Status</h3>
@@ -71,6 +77,7 @@
         <div class="text-3xl font-bold tracking-tight">{{ stats.queue_size|default:"0" }}</div>
         <p class="text-xs text-muted-foreground mt-1">Active downloads</p>
     </div>
+</div>
 </div>
 
 <!-- Content Section -->
