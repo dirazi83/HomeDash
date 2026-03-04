@@ -1920,3 +1920,109 @@ class ProxmoxAPI(ServiceAPI):
         result['vms'] = sorted(result['vms'], key=lambda x: x['name'])
         result['containers'] = sorted(result['containers'], key=lambda x: x['name'])
         return result
+
+
+class PfSenseAPI(ServiceAPI):
+    """API client for pfSense firewall (requires pfsense-api package or pfSense REST API)."""
+
+    def _get(self, endpoint: str, auth_type: str = 'apikey') -> Optional[dict]:
+        url = f"{self.base_url}/api/v1/{endpoint}"
+        headers = {'Content-Type': 'application/json'}
+        try:
+            if self.api_key:
+                # pfsense-api style: "clientid clienttoken" or just the key
+                parts = self.api_key.split()
+                if len(parts) == 2:
+                    headers['Authorization'] = f"{parts[0]} {parts[1]}"
+                else:
+                    headers['Authorization'] = self.api_key
+                resp = requests.get(url, headers=headers, timeout=8, verify=False)
+            else:
+                # Fall back to Basic auth
+                resp = requests.get(
+                    url, headers=headers, timeout=8, verify=False,
+                    auth=(self.service.username or '', self.service.password or '')
+                )
+            if resp.status_code == 200:
+                return resp.json()
+        except Exception:
+            pass
+        return None
+
+    def fetch_stats(self) -> dict:
+        stats = {
+            'is_online': False,
+            'hostname': None,
+            'version': None,
+            'uptime': None,
+            'cpu_load': None,
+            'mem_used_pct': None,
+            'gateways': [],
+            'interfaces': [],
+            'firewall_states': None,
+            'firewall_max_states': None,
+            'last_checked': timezone.now().isoformat(),
+        }
+
+        # System info
+        info = self._get('system/info')
+        if not info or info.get('code') != 200:
+            return stats
+
+        stats['is_online'] = True
+        data = info.get('data', {})
+        stats['hostname'] = data.get('hostname')
+        stats['version'] = data.get('version', {}).get('version') if isinstance(data.get('version'), dict) else data.get('version')
+        stats['uptime'] = data.get('uptime')
+
+        # CPU / memory
+        try:
+            cpu_avg = data.get('cpu_avg')
+            if cpu_avg is not None:
+                stats['cpu_load'] = round(float(cpu_avg), 1)
+        except (TypeError, ValueError):
+            pass
+
+        try:
+            mem = data.get('mem_usage')
+            if mem is not None:
+                stats['mem_used_pct'] = round(float(mem), 1)
+        except (TypeError, ValueError):
+            pass
+
+        # Gateways
+        gw_data = self._get('routing/gateway')
+        if gw_data and gw_data.get('code') == 200:
+            for gw in (gw_data.get('data') or []):
+                stats['gateways'].append({
+                    'name': gw.get('name'),
+                    'interface': gw.get('friendlyiface') or gw.get('interface'),
+                    'gateway': gw.get('gateway'),
+                    'status': gw.get('status', 'unknown').lower(),
+                    'delay': gw.get('delay'),
+                    'loss': gw.get('loss'),
+                })
+
+        # Interfaces
+        iface_data = self._get('interface')
+        if iface_data and iface_data.get('code') == 200:
+            for key, iface in (iface_data.get('data') or {}).items():
+                if not isinstance(iface, dict):
+                    continue
+                stats['interfaces'].append({
+                    'name': iface.get('descr') or key,
+                    'if': iface.get('if'),
+                    'status': 'up' if iface.get('enable') else 'down',
+                    'ipaddr': iface.get('ipaddr'),
+                    'subnet': iface.get('subnet'),
+                    'mac': iface.get('mac'),
+                })
+
+        # Firewall state table
+        fw_data = self._get('firewall/state/size')
+        if fw_data and fw_data.get('code') == 200:
+            fw = fw_data.get('data', {})
+            stats['firewall_states'] = fw.get('current_entries')
+            stats['firewall_max_states'] = fw.get('max_entries')
+
+        return stats
