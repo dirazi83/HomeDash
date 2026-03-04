@@ -7,6 +7,7 @@ urlpatterns = [
     path('<int:pk>/edit/', views.service_edit, name='service_edit'),
     path('<int:pk>/delete/', views.service_delete, name='service_delete'),
     path('<int:pk>/test/', views.service_test_connection, name='service_test'),
+    path('terminal/', views.terminal_exec, name='terminal_exec'),
 
     # Radarr-specific endpoints
     path('<int:service_pk>/radarr/movies/', radarr_views.radarr_movies_list, name='radarr_movies'),

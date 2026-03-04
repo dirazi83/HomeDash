@@ -48,6 +48,38 @@ def service_delete(request, pk):
         return redirect('service_list')
     return render(request, 'services/service_confirm_delete.html', {'service': service})
 
+def terminal_exec(request):
+    """Execute a shell command and return an HTML output snippet."""
+    if request.method != 'POST':
+        return HttpResponse(status=405)
+    import subprocess
+    command = request.POST.get('command', '').strip()
+    if not command:
+        return HttpResponse('')
+    try:
+        result = subprocess.run(
+            command, shell=True, capture_output=True, text=True, timeout=30,
+            cwd='/root/HomeDashboard',
+        )
+        stdout = result.stdout
+        stderr = result.stderr
+        exit_code = result.returncode
+    except subprocess.TimeoutExpired:
+        stdout = ''
+        stderr = 'Command timed out (30s limit).'
+        exit_code = -1
+    except Exception as exc:
+        stdout = ''
+        stderr = str(exc)
+        exit_code = -1
+    return render(request, 'services/partials/terminal_output.html', {
+        'command': command,
+        'stdout': stdout,
+        'stderr': stderr,
+        'exit_code': exit_code,
+    })
+
+
 def service_test_connection(request, pk):
     service = get_object_or_404(Service, pk=pk)
     

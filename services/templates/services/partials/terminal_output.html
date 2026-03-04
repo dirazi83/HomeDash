@@ -1,0 +1,15 @@
+<div class="border-t border-white/5 pt-2 first:border-0 first:pt-0">
+    <div class="flex items-center gap-1.5 mb-1">
+        <span class="text-white/40 select-none">$</span>
+        <span class="text-emerald-400 font-mono">{{ command }}</span>
+    </div>
+    {% if stdout %}
+    <pre class="text-white/80 whitespace-pre-wrap break-all leading-relaxed pl-4">{{ stdout }}</pre>
+    {% endif %}
+    {% if stderr %}
+    <pre class="text-red-400/90 whitespace-pre-wrap break-all leading-relaxed pl-4">{{ stderr }}</pre>
+    {% endif %}
+    {% if exit_code != 0 %}
+    <div class="text-white/25 text-xs pl-4 mt-0.5">exit {{ exit_code }}</div>
+    {% endif %}
+</div>

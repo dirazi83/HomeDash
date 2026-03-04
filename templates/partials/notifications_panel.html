@@ -1,0 +1,23 @@
+{% if errors %}
+    {% for err in errors %}
+    <div class="px-4 py-3 border-b border-border last:border-0 flex items-start gap-3">
+        <span class="mt-1.5 h-2 w-2 rounded-full bg-destructive flex-shrink-0"></span>
+        <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-foreground truncate">{{ err.name }}</p>
+            <p class="text-xs text-muted-foreground">{{ err.type_display }} &mdash; offline</p>
+        </div>
+        <a href="{% url 'service_dashboard' err.pk %}"
+            class="flex-shrink-0 text-xs text-muted-foreground hover:text-foreground transition-colors">
+            View &rarr;
+        </a>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="p-6 text-center">
+        <svg class="w-8 h-8 mx-auto mb-2 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <p class="text-sm text-muted-foreground">All services are online</p>
+    </div>
+{% endif %}
