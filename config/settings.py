@@ -46,15 +46,18 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'daphne',
     'django.contrib.staticfiles',
     'django.contrib.humanize',
 
     # Third party
     'django_htmx',
+    'channels',
     
     # Local
     'dashboard',
     'services',
+    
 ]
 
 MIDDLEWARE = [
@@ -152,5 +155,13 @@ CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.redis.RedisCache',
         'LOCATION': env('REDIS_URL', default='redis://localhost:6379/1'),
+    }
+}
+
+# Django Channels
+ASGI_APPLICATION = 'config.asgi.application'
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
     }
 }

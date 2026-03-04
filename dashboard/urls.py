@@ -11,4 +11,7 @@ urlpatterns = [
     path('settings/', views.settings_view, name='settings'),
     path('settings/trigger-poll/', views.settings_trigger_poll, name='settings_trigger_poll'),
     path('settings/clear-cache/', views.settings_clear_cache, name='settings_clear_cache'),
+    path('terminal/', views.terminal_page, name='terminal'),
+    path('notifications/', views.notifications_view, name='notifications'),
+    path('notifications/dot/', views.notifications_dot, name='notifications_dot'),
 ]

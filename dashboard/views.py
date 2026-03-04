@@ -203,6 +203,49 @@ def proxmox_live(request, pk):
     return render(request, 'partials/proxmox_live.html', ctx)
 
 
+def terminal_page(request):
+    """Dedicated terminal page."""
+    return render(request, 'terminal.html')
+
+
+def notifications_view(request):
+    """Returns dropdown content listing any offline services."""
+    from services.models import Service
+    from django.core.cache import cache as _cache
+
+    services = Service.objects.filter(is_active=True).order_by('name')
+    errors = []
+    for svc in services:
+        cached = _cache.get(f"service_stats_{svc.pk}")
+        if cached is not None and not cached.get('is_online', True):
+            errors.append({
+                'name': svc.name,
+                'pk': svc.pk,
+                'type_display': svc.get_service_type_display(),
+            })
+    return render(request, 'partials/notifications_panel.html', {'errors': errors})
+
+
+def notifications_dot(request):
+    """Returns the notification dot element — replaces itself via HTMX every 30s."""
+    from django.http import HttpResponse
+    from services.models import Service
+    from django.core.cache import cache as _cache
+
+    services = Service.objects.filter(is_active=True)
+    has_errors = any(
+        not (_cache.get(f"service_stats_{s.pk}") or {}).get('is_online', True)
+        for s in services
+        if _cache.get(f"service_stats_{s.pk}") is not None
+    )
+    vis = '' if has_errors else 'hidden '
+    return HttpResponse(
+        f'<span id="notif-dot" hx-get="/notifications/dot/" hx-trigger="every 30s" hx-swap="outerHTML" '
+        f'class="{vis}absolute top-1.5 right-1.5 block h-2 w-2 rounded-full bg-destructive ring-2 ring-background"></span>',
+        content_type='text/html',
+    )
+
+
 def service_dashboard(request, pk):
     """View for a dedicated internal dashboard for a specific service."""
     from django.shortcuts import get_object_or_404
