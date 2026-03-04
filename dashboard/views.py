@@ -1,32 +1,50 @@
 from django.shortcuts import render
 from django.core.cache import cache
 from services.models import Service
+from services.api import (RadarrAPI, SonarrAPI, TrueNASAPI, OverseerrAPI, ProwlarrAPI,
+                          JDownloaderAPI, QBittorrentAPI, PlexAPI, TautulliAPI, BazarrAPI,
+                          ProxmoxAPI, ServiceAPI)
+
+_API_MAP = {
+    'radarr': RadarrAPI,
+    'sonarr': SonarrAPI,
+    'truenas': TrueNASAPI,
+    'overseerr': OverseerrAPI,
+    'prowlarr': ProwlarrAPI,
+    'jdownloader': JDownloaderAPI,
+    'qbittorrent': QBittorrentAPI,
+    'plex': PlexAPI,
+    'tautulli': TautulliAPI,
+    'bazarr': BazarrAPI,
+    'proxmox': ProxmoxAPI,
+}
+
+def _fetch_live_stats(service):
+    """Fetch stats directly from the service API, bypassing Redis cache."""
+    api_class = _API_MAP.get(service.service_type, ServiceAPI)
+    return api_class(service).fetch_stats()
 
 def index_view(request):
     services = Service.objects.filter(is_active=True).order_by('name')
     return render(request, 'index.html', {'services': services, 'total_services': services.count()})
 
 def widget_update(request, pk):
-    """Returns the rendered widget template for a specific service."""
+    """Returns the rendered widget template for a specific service (live, no cache)."""
     try:
         service = Service.objects.get(pk=pk, is_active=True)
     except Service.DoesNotExist:
         return render(request, 'partials/widget_error.html', {'error': 'Service not found'})
-        
-    cache_key = f"service_stats_{service.pk}"
-    stats = cache.get(cache_key)
-    
-    # Render a specific widget type based on service
+
+    stats = _fetch_live_stats(service)
+
     template_name = f'widgets/{service.service_type}.html'
-    
-    # Fallback to a generic widget if specific one doesn't exist
     from django.template.loader import get_template
     from django.template import TemplateDoesNotExist
     try:
         get_template(template_name)
     except TemplateDoesNotExist:
         template_name = 'widgets/generic.html'
-        
+
     return render(request, template_name, {'service': service, 'stats': stats})
 
 def settings_view(request):
@@ -287,13 +305,12 @@ def notifications_dot(request):
 
 
 def service_dashboard(request, pk):
-    """View for a dedicated internal dashboard for a specific service."""
+    """View for a dedicated internal dashboard for a specific service (live, no cache)."""
     from django.shortcuts import get_object_or_404
     service = get_object_or_404(Service, pk=pk, is_active=True)
-    
-    cache_key = f"service_stats_{service.pk}"
-    stats = cache.get(cache_key)
-    
+
+    stats = _fetch_live_stats(service)
+
     template_name = f'dashboards/{service.service_type}.html'
     from django.template.loader import get_template
     from django.template import TemplateDoesNotExist
@@ -301,5 +318,5 @@ def service_dashboard(request, pk):
         get_template(template_name)
     except TemplateDoesNotExist:
         template_name = 'dashboards/generic.html'
-        
+
     return render(request, template_name, {'service': service, 'stats': stats})

@@ -18,6 +18,12 @@
 </div>
 
 <!-- Stats Cards -->
+<div id="stats-cards"
+     hx-get="{{ request.get_full_path }}"
+     hx-trigger="every 15s"
+     hx-select="#stats-cards"
+     hx-target="#stats-cards"
+     hx-swap="outerHTML">
 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
     <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-4">
         <h3 class="text-xs font-medium text-muted-foreground tracking-tight mb-1.5">Status</h3>
@@ -72,6 +78,7 @@
         <div class="text-2xl font-bold tracking-tight text-teal-500">{{ stats.enabled_providers|default:"0" }}</div>
         <p class="text-xs text-muted-foreground mt-0.5">of {{ stats.total_providers|default:"0" }} active</p>
     </div>
+</div>
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
