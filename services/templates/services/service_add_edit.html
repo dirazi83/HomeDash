@@ -181,6 +181,12 @@ const SERVICE_FIELD_CONFIG = {
         password_input: { label: "API Token Secret",       help: "The UUID secret shown once when creating the token.",                                    placeholder: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" },
         username:       { label: "Username",               help: "Not required when using API token — leave blank.",                                       placeholder: "" },
     },
+    pfsense: {
+        url:            { label: "pfSense URL",            help: "e.g. https://192.168.1.1 — base URL of your pfSense web UI.",                            placeholder: "https://192.168.1.1" },
+        api_key_input:  { label: "API Key",                help: "Client ID + Client Token from System → API Keys (pfsense-api package). Format: 'clientid secret'. Leave blank to use username/password.", placeholder: "clientid clienttoken" },
+        username:       { label: "Username",               help: "pfSense admin username — used if API Key is blank.",                                     placeholder: "admin" },
+        password_input: { label: "Password",               help: "pfSense admin password — used if API Key is blank.",                                     placeholder: "••••••••" },
+    },
 };
 
 function applyServiceConfig(serviceType) {

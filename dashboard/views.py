@@ -3,7 +3,7 @@ from django.core.cache import cache
 from services.models import Service
 from services.api import (RadarrAPI, SonarrAPI, TrueNASAPI, OverseerrAPI, ProwlarrAPI,
                           JDownloaderAPI, QBittorrentAPI, PlexAPI, TautulliAPI, BazarrAPI,
-                          ProxmoxAPI, ServiceAPI)
+                          ProxmoxAPI, PfSenseAPI, ServiceAPI)
 
 _API_MAP = {
     'radarr': RadarrAPI,
@@ -17,6 +17,7 @@ _API_MAP = {
     'tautulli': TautulliAPI,
     'bazarr': BazarrAPI,
     'proxmox': ProxmoxAPI,
+    'pfsense': PfSenseAPI,
 }
 
 def _fetch_live_stats(service):
