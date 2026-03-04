@@ -203,6 +203,46 @@ def proxmox_live(request, pk):
     return render(request, 'partials/proxmox_live.html', ctx)
 
 
+def setup_wizard(request):
+    """First-run installation wizard. Only accessible when no superuser exists."""
+    from django.contrib.auth.models import User
+    from django.contrib.auth import login
+
+    if User.objects.filter(is_superuser=True).exists():
+        return render(request, 'setup.html', {'already_done': True})
+
+    errors = {}
+    if request.method == 'POST':
+        username = request.POST.get('username', '').strip()
+        email = request.POST.get('email', '').strip()
+        password = request.POST.get('password', '')
+        password2 = request.POST.get('password2', '')
+
+        if not username:
+            errors['username'] = 'Username is required.'
+        elif User.objects.filter(username=username).exists():
+            errors['username'] = 'That username is already taken.'
+
+        if not password:
+            errors['password'] = 'Password is required.'
+        elif len(password) < 8:
+            errors['password'] = 'Password must be at least 8 characters.'
+        elif password != password2:
+            errors['password2'] = 'Passwords do not match.'
+
+        if not errors:
+            user = User.objects.create_superuser(username=username, email=email, password=password)
+            login(request, user)
+            return render(request, 'setup.html', {'done': True, 'username': username})
+
+    features = [
+        'Real-time monitoring', 'Service dashboards',
+        'Live download tracking', 'Web terminal',
+        'Notification alerts', 'Proxmox VM status',
+    ]
+    return render(request, 'setup.html', {'errors': errors, 'post': request.POST, 'features': features})
+
+
 def terminal_page(request):
     """Dedicated terminal page."""
     return render(request, 'terminal.html')

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup | HomeDash</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: ['class'],
+            theme: { extend: {
+                colors: {
+                    border: 'hsl(var(--border))', background: 'hsl(var(--background))',
+                    foreground: 'hsl(var(--foreground))', card: 'hsl(var(--card))',
+                    'card-foreground': 'hsl(var(--card-foreground))',
+                    muted: 'hsl(var(--muted))', 'muted-foreground': 'hsl(var(--muted-foreground))',
+                    destructive: 'hsl(var(--destructive))',
+                }
+            }}
+        }
+    </script>
+    <style>
+        :root { --background:240 10% 3.9%; --foreground:0 0% 98%; --card:240 10% 6%;
+          --card-foreground:0 0% 98%; --muted:240 3.7% 15.9%; --muted-foreground:240 5% 64.9%;
+          --border:240 3.7% 15.9%; --destructive:0 62.8% 50%; }
+        body { background-color:hsl(var(--background)); color:hsl(var(--foreground));
+               font-family:'Inter',ui-sans-serif,system-ui,sans-serif; }
+        .step { display: none; }
+        .step.active { display: block; }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+        .step.active { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+{% if already_done %}
+<!-- Already set up -->
+<div class="w-full max-w-md text-center space-y-4">
+    <div class="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto">
+        <svg class="w-8 h-8 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+    </div>
+    <h1 class="text-2xl font-bold">Already set up</h1>
+    <p class="text-muted-foreground text-sm">HomeDash is already configured.</p>
+    <a href="/" class="inline-flex items-center gap-2 px-6 py-2.5 bg-white text-black rounded-lg text-sm font-medium hover:bg-white/90 transition-colors">
+        Go to Dashboard
+    </a>
+</div>
+
+{% elif done %}
+<!-- Step 3: Complete -->
+<div class="w-full max-w-md text-center space-y-6">
+    <div class="w-20 h-20 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto animate-pulse">
+        <svg class="w-10 h-10 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+    </div>
+    <div>
+        <h1 class="text-3xl font-bold mb-2">You're all set, {{ username }}!</h1>
+        <p class="text-muted-foreground">HomeDash is ready. Your admin account has been created.</p>
+    </div>
+    <a href="/"
+        class="inline-flex items-center gap-2 px-8 py-3 bg-white text-black rounded-lg font-semibold hover:bg-white/90 transition-colors">
+        Open Dashboard
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+        </svg>
+    </a>
+</div>
+
+{% else %}
+<!-- Wizard -->
+<div class="w-full max-w-lg">
+
+    <!-- Logo -->
+    <div class="text-center mb-10">
+        <div class="inline-flex items-center gap-3 mb-3">
+            <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                </svg>
+            </div>
+            <span class="text-2xl font-bold tracking-tight">HomeDash</span>
+        </div>
+        <p class="text-muted-foreground text-sm">First-time setup</p>
+    </div>
+
+    <!-- Progress dots -->
+    <div class="flex justify-center gap-2 mb-8" id="progress-dots">
+        <span id="dot-1" class="w-2 h-2 rounded-full bg-white transition-all"></span>
+        <span id="dot-2" class="w-2 h-2 rounded-full bg-white/20 transition-all"></span>
+    </div>
+
+    <!-- Card -->
+    <div class="rounded-2xl border border-white/10 bg-card p-8 shadow-2xl">
+
+        <!-- Step 1: Welcome -->
+        <div class="step active" id="step-1">
+            <div class="text-center space-y-4">
+                <div class="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto">
+                    <svg class="w-8 h-8 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold mb-2">Welcome to HomeDash</h2>
+                    <p class="text-muted-foreground text-sm leading-relaxed">
+                        Your self-hosted home dashboard for monitoring services like Radarr, Sonarr, Proxmox, qBittorrent, and more — all in one place.
+                    </p>
+                </div>
+                <div class="grid grid-cols-2 gap-3 pt-2 text-left">
+                    {% for feat in features %}
+                    <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                        <svg class="w-4 h-4 text-emerald-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                        </svg>
+                        {{ feat }}
+                    </div>
+                    {% endfor %}
+                </div>
+                <button onclick="goStep(2)"
+                    class="w-full mt-4 px-6 py-3 bg-white text-black rounded-lg font-semibold hover:bg-white/90 transition-colors flex items-center justify-center gap-2">
+                    Get Started
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 2: Create Admin Account -->
+        <div class="step" id="step-2">
+            <h2 class="text-xl font-bold mb-1">Create admin account</h2>
+            <p class="text-muted-foreground text-sm mb-6">This account will be used to log in to HomeDash.</p>
+
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+
+                <div>
+                    <label class="block text-sm font-medium mb-1.5">Username</label>
+                    <input type="text" name="username" value="{{ post.username }}" required autocomplete="username"
+                        class="w-full px-3 py-2.5 rounded-lg border {% if errors.username %}border-red-500/60 bg-red-500/5{% else %}border-white/10 bg-white/5{% endif %} text-sm outline-none focus:border-white/30 focus:bg-white/8 transition-colors placeholder:text-white/25"
+                        placeholder="admin">
+                    {% if errors.username %}
+                    <p class="text-red-400 text-xs mt-1">{{ errors.username }}</p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1.5">Email <span class="text-muted-foreground font-normal">(optional)</span></label>
+                    <input type="email" name="email" value="{{ post.email }}" autocomplete="email"
+                        class="w-full px-3 py-2.5 rounded-lg border border-white/10 bg-white/5 text-sm outline-none focus:border-white/30 transition-colors placeholder:text-white/25"
+                        placeholder="admin@example.com">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1.5">Password</label>
+                    <input type="password" name="password" required autocomplete="new-password"
+                        class="w-full px-3 py-2.5 rounded-lg border {% if errors.password %}border-red-500/60 bg-red-500/5{% else %}border-white/10 bg-white/5{% endif %} text-sm outline-none focus:border-white/30 transition-colors placeholder:text-white/25"
+                        placeholder="Min. 8 characters">
+                    {% if errors.password %}
+                    <p class="text-red-400 text-xs mt-1">{{ errors.password }}</p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1.5">Confirm password</label>
+                    <input type="password" name="password2" required autocomplete="new-password"
+                        class="w-full px-3 py-2.5 rounded-lg border {% if errors.password2 %}border-red-500/60 bg-red-500/5{% else %}border-white/10 bg-white/5{% endif %} text-sm outline-none focus:border-white/30 transition-colors placeholder:text-white/25"
+                        placeholder="Repeat password">
+                    {% if errors.password2 %}
+                    <p class="text-red-400 text-xs mt-1">{{ errors.password2 }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="flex gap-3 pt-2">
+                    <button type="button" onclick="goStep(1)"
+                        class="px-5 py-2.5 rounded-lg border border-white/10 text-sm font-medium hover:bg-white/5 transition-colors">
+                        Back
+                    </button>
+                    <button type="submit"
+                        class="flex-1 px-6 py-2.5 bg-white text-black rounded-lg font-semibold hover:bg-white/90 transition-colors text-sm">
+                        Create Account &amp; Finish
+                    </button>
+                </div>
+            </form>
+        </div>
+
+    </div>
+
+    <p class="text-center text-xs text-muted-foreground mt-6">
+        HomeDash &mdash; self-hosted home server dashboard
+    </p>
+</div>
+{% endif %}
+
+<script>
+function goStep(n) {
+    document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
+    document.getElementById('step-' + n).classList.add('active');
+    document.querySelectorAll('[id^="dot-"]').forEach((d, i) => {
+        d.className = 'w-2 h-2 rounded-full transition-all ' + (i + 1 === n ? 'bg-white scale-125' : 'bg-white/20');
+    });
+}
+// If there are errors from POST, jump straight to step 2
+{% if errors %}goStep(2);{% endif %}
+</script>
+</body>
+</html>
