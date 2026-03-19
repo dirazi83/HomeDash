@@ -226,3 +226,7 @@ docker pull med10/homedash:latest
 ## License
 
 MIT
+
+---
+
+Made with ❤️ by **Mohammed Habib** · [dirazi83@gmail.com](mailto:dirazi83@gmail.com)
