@@ -15,6 +15,7 @@ class ServiceType(models.TextChoices):
     BAZARR = 'bazarr', 'Bazarr'
     PROXMOX = 'proxmox', 'Proxmox'
     PFSENSE = 'pfsense', 'pfSense'
+    HOMEDASH = 'homedash', 'HomeDash'
     OTHER = 'other', 'Other'
 
 class Service(models.Model):

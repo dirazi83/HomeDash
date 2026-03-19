@@ -50,7 +50,7 @@ class ServiceAPI:
 
         self.service.is_online = is_online
         self.service.last_checked = timezone.now()
-        self.service.save()
+        self.service.save(update_fields=["is_online", "last_checked"])
         return is_online
 
     def fetch_stats(self) -> dict:
@@ -88,7 +88,7 @@ class RadarrAPI(ServiceAPI):
 
         self.service.is_online = is_online
         self.service.last_checked = timezone.now()
-        self.service.save()
+        self.service.save(update_fields=["is_online", "last_checked"])
         return is_online
 
     def fetch_stats(self) -> dict:
@@ -453,7 +453,7 @@ class SonarrAPI(ServiceAPI):
 
         self.service.is_online = is_online
         self.service.last_checked = timezone.now()
-        self.service.save()
+        self.service.save(update_fields=["is_online", "last_checked"])
         return is_online
 
     def fetch_stats(self) -> dict:
@@ -649,7 +649,7 @@ class TrueNASAPI(ServiceAPI):
 
         self.service.is_online = is_online
         self.service.last_checked = timezone.now()
-        self.service.save()
+        self.service.save(update_fields=["is_online", "last_checked"])
         return is_online
 
     def fetch_stats(self) -> dict:
@@ -819,7 +819,7 @@ class OverseerrAPI(ServiceAPI):
 
         self.service.is_online = is_online
         self.service.last_checked = timezone.now()
-        self.service.save()
+        self.service.save(update_fields=["is_online", "last_checked"])
         return is_online
 
     def fetch_stats(self) -> dict:
@@ -1109,7 +1109,7 @@ class ProwlarrAPI(ServiceAPI):
             is_online = False
         self.service.is_online = is_online
         self.service.last_checked = timezone.now()
-        self.service.save()
+        self.service.save(update_fields=["is_online", "last_checked"])
         return is_online
 
     def fetch_stats(self) -> dict:
@@ -1203,7 +1203,7 @@ class JDownloaderAPI(ServiceAPI):
             is_online = False
         self.service.is_online = is_online
         self.service.last_checked = timezone.now()
-        self.service.save()
+        self.service.save(update_fields=["is_online", "last_checked"])
         return is_online
 
     def fetch_stats(self) -> dict:
@@ -1228,14 +1228,14 @@ class JDownloaderAPI(ServiceAPI):
             if not device:
                 self.service.is_online = False
                 self.service.last_checked = timezone.now()
-                self.service.save()
+                self.service.save(update_fields=["is_online", "last_checked"])
                 return stats
 
             stats['is_online'] = True
             stats['device_name'] = device.name
             self.service.is_online = True
             self.service.last_checked = timezone.now()
-            self.service.save()
+            self.service.save(update_fields=["is_online", "last_checked"])
 
             state = device.downloadcontroller.get_current_state()
             stats['state'] = state if state else 'UNKNOWN'
@@ -1314,7 +1314,7 @@ class QBittorrentAPI(ServiceAPI):
             is_online = False
         self.service.is_online = is_online
         self.service.last_checked = timezone.now()
-        self.service.save()
+        self.service.save(update_fields=["is_online", "last_checked"])
         return is_online
 
     @staticmethod
@@ -1350,12 +1350,12 @@ class QBittorrentAPI(ServiceAPI):
         if not sess:
             self.service.is_online = False
             self.service.last_checked = timezone.now()
-            self.service.save()
+            self.service.save(update_fields=["is_online", "last_checked"])
             return stats
 
         self.service.is_online = True
         self.service.last_checked = timezone.now()
-        self.service.save()
+        self.service.save(update_fields=["is_online", "last_checked"])
         stats['is_online'] = True
 
         try:
@@ -1458,7 +1458,7 @@ class PlexAPI(ServiceAPI):
         is_online = data is not None
         self.service.is_online = is_online
         self.service.last_checked = timezone.now()
-        self.service.save()
+        self.service.save(update_fields=["is_online", "last_checked"])
         return is_online
 
     def fetch_stats(self) -> dict:
@@ -1478,12 +1478,12 @@ class PlexAPI(ServiceAPI):
         if not identity:
             self.service.is_online = False
             self.service.last_checked = timezone.now()
-            self.service.save()
+            self.service.save(update_fields=["is_online", "last_checked"])
             return stats
 
         self.service.is_online = True
         self.service.last_checked = timezone.now()
-        self.service.save()
+        self.service.save(update_fields=["is_online", "last_checked"])
         stats['is_online'] = True
 
         mc = identity.get('MediaContainer', {})
@@ -1572,7 +1572,7 @@ class TautulliAPI(ServiceAPI):
         is_online = data is not None
         self.service.is_online = is_online
         self.service.last_checked = timezone.now()
-        self.service.save()
+        self.service.save(update_fields=["is_online", "last_checked"])
         return is_online
 
     def fetch_stats(self) -> dict:
@@ -1594,12 +1594,12 @@ class TautulliAPI(ServiceAPI):
         if not server_info:
             self.service.is_online = False
             self.service.last_checked = timezone.now()
-            self.service.save()
+            self.service.save(update_fields=["is_online", "last_checked"])
             return stats
 
         self.service.is_online = True
         self.service.last_checked = timezone.now()
-        self.service.save()
+        self.service.save(update_fields=["is_online", "last_checked"])
         stats['is_online'] = True
         stats['server_name'] = server_info.get('pms_name')
         stats['version'] = server_info.get('pms_version')
@@ -1658,7 +1658,7 @@ class BazarrAPI(ServiceAPI):
         is_online = data is not None
         self.service.is_online = is_online
         self.service.last_checked = timezone.now()
-        self.service.save()
+        self.service.save(update_fields=["is_online", "last_checked"])
         return is_online
 
     def fetch_stats(self) -> dict:
@@ -1681,12 +1681,12 @@ class BazarrAPI(ServiceAPI):
         if not status:
             self.service.is_online = False
             self.service.last_checked = timezone.now()
-            self.service.save()
+            self.service.save(update_fields=["is_online", "last_checked"])
             return stats
 
         self.service.is_online = True
         self.service.last_checked = timezone.now()
-        self.service.save()
+        self.service.save(update_fields=["is_online", "last_checked"])
         stats['is_online'] = True
 
         sdata = status.get('data', status)  # some versions wrap in 'data'
@@ -1759,7 +1759,7 @@ class ProxmoxAPI(ServiceAPI):
         is_online = data is not None
         self.service.is_online = is_online
         self.service.last_checked = timezone.now()
-        self.service.save()
+        self.service.save(update_fields=["is_online", "last_checked"])
         return is_online
 
     @staticmethod
@@ -1792,12 +1792,12 @@ class ProxmoxAPI(ServiceAPI):
         if not ver:
             self.service.is_online = False
             self.service.last_checked = timezone.now()
-            self.service.save()
+            self.service.save(update_fields=["is_online", "last_checked"])
             return stats
 
         self.service.is_online = True
         self.service.last_checked = timezone.now()
-        self.service.save()
+        self.service.save(update_fields=["is_online", "last_checked"])
         stats['is_online'] = True
         stats['version'] = ver.get('data', {}).get('version')
 
@@ -1923,26 +1923,18 @@ class ProxmoxAPI(ServiceAPI):
 
 
 class PfSenseAPI(ServiceAPI):
-    """API client for pfSense firewall (requires pfsense-api package or pfSense REST API)."""
+    """API client for pfSense firewall using pfREST (pfrest.org) /api/v2/ endpoints."""
 
-    def _get(self, endpoint: str, auth_type: str = 'apikey') -> Optional[dict]:
-        url = f"{self.base_url}/api/v1/{endpoint}"
+    def _get(self, endpoint: str, params: dict = None) -> Optional[dict]:
+        url = f"{self.base_url}/api/v2/{endpoint}"
         headers = {'Content-Type': 'application/json'}
         try:
             if self.api_key:
-                # pfsense-api style: "clientid clienttoken" or just the key
-                parts = self.api_key.split()
-                if len(parts) == 2:
-                    headers['Authorization'] = f"{parts[0]} {parts[1]}"
-                else:
-                    headers['Authorization'] = self.api_key
-                resp = requests.get(url, headers=headers, timeout=8, verify=False)
-            else:
-                # Fall back to Basic auth
-                resp = requests.get(
-                    url, headers=headers, timeout=8, verify=False,
-                    auth=(self.service.username or '', self.service.password or '')
-                )
+                headers['X-API-Key'] = self.api_key
+            resp = requests.get(
+                url, headers=headers, params=params, timeout=8, verify=False,
+                auth=None if self.api_key else (self.service.username or '', self.service.password or '')
+            )
             if resp.status_code == 200:
                 return resp.json()
         except Exception:
@@ -1964,22 +1956,20 @@ class PfSenseAPI(ServiceAPI):
             'last_checked': timezone.now().isoformat(),
         }
 
-        # System info
-        info = self._get('system/info')
+        # System status — GET /api/v2/status/system
+        info = self._get('status/system')
         if not info or info.get('code') != 200:
             return stats
 
         stats['is_online'] = True
         data = info.get('data', {})
-        stats['hostname'] = data.get('hostname')
-        stats['version'] = data.get('version', {}).get('version') if isinstance(data.get('version'), dict) else data.get('version')
+        stats['hostname'] = data.get('platform') or data.get('hostname')
         stats['uptime'] = data.get('uptime')
 
-        # CPU / memory
         try:
-            cpu_avg = data.get('cpu_avg')
-            if cpu_avg is not None:
-                stats['cpu_load'] = round(float(cpu_avg), 1)
+            cpu = data.get('cpu_usage')
+            if cpu is not None:
+                stats['cpu_load'] = round(float(cpu), 1)
         except (TypeError, ValueError):
             pass
 
@@ -1990,39 +1980,86 @@ class PfSenseAPI(ServiceAPI):
         except (TypeError, ValueError):
             pass
 
-        # Gateways
-        gw_data = self._get('routing/gateway')
+        # Version — GET /api/v2/system/version
+        ver_data = self._get('system/version')
+        if ver_data and ver_data.get('code') == 200:
+            stats['version'] = ver_data.get('data', {}).get('base') or ver_data.get('data', {}).get('version')
+
+        # Gateways — GET /api/v2/status/gateways
+        gw_data = self._get('status/gateways')
         if gw_data and gw_data.get('code') == 200:
             for gw in (gw_data.get('data') or []):
                 stats['gateways'].append({
                     'name': gw.get('name'),
-                    'interface': gw.get('friendlyiface') or gw.get('interface'),
-                    'gateway': gw.get('gateway'),
-                    'status': gw.get('status', 'unknown').lower(),
+                    'interface': gw.get('srcip'),
+                    'gateway': gw.get('monitorip'),
+                    'status': str(gw.get('status', 'unknown')).lower(),
                     'delay': gw.get('delay'),
                     'loss': gw.get('loss'),
                 })
 
-        # Interfaces
-        iface_data = self._get('interface')
+        # Interfaces — GET /api/v2/status/interfaces
+        iface_data = self._get('status/interfaces')
         if iface_data and iface_data.get('code') == 200:
-            for key, iface in (iface_data.get('data') or {}).items():
+            for iface in (iface_data.get('data') or []):
                 if not isinstance(iface, dict):
                     continue
                 stats['interfaces'].append({
-                    'name': iface.get('descr') or key,
-                    'if': iface.get('if'),
-                    'status': 'up' if iface.get('enable') else 'down',
+                    'name': iface.get('descr') or iface.get('name'),
+                    'if': iface.get('hwif') or iface.get('if'),
+                    'status': str(iface.get('status', 'unknown')).lower(),
                     'ipaddr': iface.get('ipaddr'),
                     'subnet': iface.get('subnet'),
-                    'mac': iface.get('mac'),
+                    'mac': iface.get('macaddr') or iface.get('mac'),
                 })
 
-        # Firewall state table
-        fw_data = self._get('firewall/state/size')
+        # Firewall states count — GET /api/v2/firewall/states
+        fw_data = self._get('firewall/states', params={'limit': 1})
         if fw_data and fw_data.get('code') == 200:
-            fw = fw_data.get('data', {})
-            stats['firewall_states'] = fw.get('current_entries')
-            stats['firewall_max_states'] = fw.get('max_entries')
+            total = (fw_data.get('_links') or {}).get('total') or fw_data.get('total')
+            if total is not None:
+                stats['firewall_states'] = total
+            else:
+                # fallback: fetch all and count (only if list is small)
+                fw_all = self._get('firewall/states')
+                if fw_all and fw_all.get('code') == 200:
+                    stats['firewall_states'] = len(fw_all.get('data') or [])
 
+        return stats
+
+
+class HomeDashAPI(ServiceAPI):
+    """HTTP health-check monitor for the HomeDashboard production web server."""
+
+    def fetch_stats(self) -> dict:
+        import time
+        stats = {
+            'is_online': False,
+            'response_time_ms': None,
+            'status_code': None,
+            'server': None,
+            'content_type': None,
+            'redirect_url': None,
+            'last_checked': timezone.now().isoformat(),
+        }
+        try:
+            target = self.base_url.rstrip('/')
+            start = time.monotonic()
+            resp = requests.get(
+                target + '/',
+                timeout=8,
+                allow_redirects=True,
+                headers={'User-Agent': 'HomeDashboard-Monitor/1.0'},
+                verify=False,
+            )
+            elapsed = round((time.monotonic() - start) * 1000, 1)
+            stats['status_code'] = resp.status_code
+            stats['response_time_ms'] = elapsed
+            stats['server'] = resp.headers.get('Server')
+            stats['content_type'] = resp.headers.get('Content-Type', '').split(';')[0].strip()
+            if resp.history:
+                stats['redirect_url'] = resp.url
+            stats['is_online'] = resp.status_code < 500
+        except Exception:
+            pass
         return stats

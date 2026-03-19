@@ -1,21 +1,99 @@
 version: '3.8'
 
 services:
+
   db:
-    image: postgres:15
+    image: postgres:15-alpine
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: homedash_user
-      POSTGRES_PASSWORD: homedash_password
-      POSTGRES_DB: homedash
-    ports:
-      - "5432:5432"
+      POSTGRES_USER:     ${DB_USER:-admin}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-admin}
+      POSTGRES_DB:       ${DB_NAME:-homedash}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-admin} -d ${DB_NAME:-homedash}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   redis:
-    image: redis:7
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+
+  web:
+    image: med10/homedash:latest
+    restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "${PORT:-3033}:3033"
+    environment:
+      SECRET_KEY:             ${SECRET_KEY:-django-insecure-change-me-in-production}
+      DEBUG:                  ${DEBUG:-False}
+      DB_HOST:                db
+      DB_PORT:                5432
+      DB_NAME:                ${DB_NAME:-homedash}
+      DB_USER:                ${DB_USER:-admin}
+      DB_PASSWORD:            ${DB_PASSWORD:-admin}
+      REDIS_URL:              redis://redis:6379/1
+      CELERY_BROKER_URL:      redis://redis:6379/0
+      CELERY_RESULT_BACKEND:  redis://redis:6379/0
+      ADMIN_USER:             ${ADMIN_USER:-admin}
+      ADMIN_PASSWORD:         ${ADMIN_PASSWORD:-admin}
+      ADMIN_EMAIL:            ${ADMIN_EMAIL:-admin@homedash.local}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - homedash_backups:/app/backups
+
+  celery:
+    image: med10/homedash:latest
+    restart: unless-stopped
+    command: >
+      bash -c "celery -A config worker -l INFO"
+    environment:
+      SECRET_KEY:             ${SECRET_KEY:-django-insecure-change-me-in-production}
+      DB_HOST:                db
+      DB_PORT:                5432
+      DB_NAME:                ${DB_NAME:-homedash}
+      DB_USER:                ${DB_USER:-admin}
+      DB_PASSWORD:            ${DB_PASSWORD:-admin}
+      REDIS_URL:              redis://redis:6379/1
+      CELERY_BROKER_URL:      redis://redis:6379/0
+      CELERY_RESULT_BACKEND:  redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      web:
+        condition: service_started
+
+  celery-beat:
+    image: med10/homedash:latest
+    restart: unless-stopped
+    command: >
+      bash -c "celery -A config beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler || celery -A config beat -l INFO"
+    environment:
+      SECRET_KEY:             ${SECRET_KEY:-django-insecure-change-me-in-production}
+      DB_HOST:                db
+      DB_PORT:                5432
+      DB_NAME:                ${DB_NAME:-homedash}
+      DB_USER:                ${DB_USER:-admin}
+      DB_PASSWORD:            ${DB_PASSWORD:-admin}
+      REDIS_URL:              redis://redis:6379/1
+      CELERY_BROKER_URL:      redis://redis:6379/0
+      CELERY_RESULT_BACKEND:  redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+      - web
 
 volumes:
   postgres_data:
+  redis_data:
+  homedash_backups:
