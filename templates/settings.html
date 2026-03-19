@@ -116,6 +116,55 @@
             {% endif %}
         </div>
 
+        <!-- Backup & Restore -->
+        <div class="rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden">
+            <div class="px-5 py-4 border-b border-border flex items-center gap-2">
+                <svg class="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
+                </svg>
+                <h3 class="text-sm font-medium tracking-tight">Backup & Restore</h3>
+            </div>
+            <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <!-- Backup -->
+                <div>
+                    <p class="text-sm font-medium mb-1">Download Backup</p>
+                    <p class="text-xs text-muted-foreground mb-3">Export all service configurations, credentials, and users to a JSON file.</p>
+                    {% if request.GET.restored %}
+                    <p class="text-xs text-emerald-500 mb-2">✓ Restore completed successfully.</p>
+                    {% endif %}
+                    <form method="post" action="{% url 'settings_backup' %}">
+                        {% csrf_token %}
+                        <button type="submit"
+                            class="inline-flex items-center gap-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 text-sm font-medium transition-colors">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                            </svg>
+                            Download Backup
+                        </button>
+                    </form>
+                </div>
+                <!-- Restore -->
+                <div class="sm:border-l sm:border-border sm:pl-5">
+                    <p class="text-sm font-medium mb-1">Restore from Backup</p>
+                    <p class="text-xs text-muted-foreground mb-3">Upload a previously downloaded JSON backup to restore all service configurations.</p>
+                    <form method="post" action="{% url 'settings_restore' %}" enctype="multipart/form-data" class="flex flex-col gap-2">
+                        {% csrf_token %}
+                        <label class="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                            <input type="file" name="backup_file" accept=".json" required
+                                class="block w-full text-xs text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-muted file:text-foreground hover:file:bg-accent cursor-pointer">
+                        </label>
+                        <button type="submit"
+                            class="inline-flex items-center gap-2 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-4 text-sm font-medium transition-colors w-fit">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4 4l4-4m0 0l4 4m-4-4V4"></path>
+                            </svg>
+                            Restore
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         <!-- Appearance -->
         <div class="rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden">
             <div class="px-5 py-4 border-b border-border">

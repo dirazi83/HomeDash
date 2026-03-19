@@ -5,7 +5,8 @@ from .forms import ServiceForm
 from .api import RadarrAPI, SonarrAPI, ServiceAPI
 
 def service_list(request):
-    services = Service.objects.all().order_by('-created_at')
+    # only show active entries by default; disabled services can be re‑enabled
+    services = Service.objects.filter(is_active=True).order_by('-created_at')
     return render(request, 'services/service_list.html', {'services': services})
 
 def service_add(request):
@@ -42,9 +43,27 @@ def service_edit(request, pk):
 def service_delete(request, pk):
     service = get_object_or_404(Service, pk=pk)
     if request.method == 'POST':
-        service.delete()
+        # remember pk ahead of time for cache clearing
+        svc_pk = service.pk
+        # mark inactive first so the UI will hide even if deletion fails
+        service.is_active = False
+        service.save(update_fields=["is_active"])
+        try:
+            service.delete()
+        except Exception:
+            # if deletion errors (e.g. DB locked), ignoring ensures we still
+            # hide the service; it can be cleaned up later with a management
+            # command or manually via the admin interface.
+            pass
+
+        # remove any stale cached stats as well
+        from django.core.cache import cache as _cache
+        _cache.delete(f"service_stats_{svc_pk}")
+
         if request.headers.get('HX-Request'):
-            return HttpResponse("") # Removes the element from the DOM
+            resp = HttpResponse("")
+            resp["HX-Trigger"] = "serviceDeleted"
+            return resp
         return redirect('service_list')
     return render(request, 'services/service_confirm_delete.html', {'service': service})
 
@@ -95,3 +114,52 @@ def service_test_connection(request, pk):
     
     # Return HTML fragment for HTMX to swap
     return render(request, 'services/partials/status_badge.html', {'service': service})
+
+
+def service_backup(request):
+    """Return a JSON dump of all services (for backup)."""
+    # note: encrypted fields are exported as-is so they can be restored later
+    services = list(Service.objects.values(
+        'name', 'service_type', 'url',
+        'api_key_encrypted', 'username', 'password_encrypted',
+        'is_active'
+    ))
+    from django.http import JsonResponse
+    resp = JsonResponse(services, safe=False)
+    resp['Content-Disposition'] = 'attachment; filename=services_backup.json'
+    return resp
+
+
+def service_restore(request):
+    """Import services from a previously generated JSON dump.
+
+    Existing services are matched on (name, service_type) and updated; new
+    entries are created.  Any encrypted fields are preserved verbatim so the
+    administrator must ensure the backup has not been tampered with.
+    """
+    if request.method == 'POST':
+        fileobj = request.FILES.get('backup_file')
+        if fileobj:
+            import json
+            try:
+                data = json.load(fileobj)
+            except Exception:
+                return render(request, 'services/service_backup_restore.html', {
+                    'error': 'Invalid JSON file.'
+                })
+            for row in data:
+                defaults = {
+                    'url': row.get('url'),
+                    'api_key_encrypted': row.get('api_key_encrypted'),
+                    'username': row.get('username'),
+                    'password_encrypted': row.get('password_encrypted'),
+                    'is_active': row.get('is_active', True),
+                }
+                Service.objects.update_or_create(
+                    name=row.get('name'),
+                    service_type=row.get('service_type'),
+                    defaults=defaults,
+                )
+            return redirect('service_list')
+    return render(request, 'services/service_backup_restore.html')
+

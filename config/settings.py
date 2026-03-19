@@ -102,7 +102,14 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    'default': env.db('DATABASE_URL', default=f'sqlite:///{BASE_DIR}/db.sqlite3')
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME':     env('DB_NAME',     default='homedash'),
+        'USER':     env('DB_USER',     default='admin'),
+        'PASSWORD': env('DB_PASSWORD', default='admin'),
+        'HOST':     env('DB_HOST',     default='localhost'),
+        'PORT':     env('DB_PORT',     default='5433'),
+    }
 }
 
 
@@ -168,6 +175,9 @@ CACHES = {
 ASGI_APPLICATION = 'config.asgi.application'
 CHANNEL_LAYERS = {
     'default': {
-        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [env('REDIS_URL', default='redis://localhost:6379/0')],
+        },
     }
 }

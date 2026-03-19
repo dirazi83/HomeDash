@@ -1,9 +1,11 @@
+import time as _time
 from django.shortcuts import render
+from django.http import JsonResponse
 from django.core.cache import cache
 from services.models import Service
 from services.api import (RadarrAPI, SonarrAPI, TrueNASAPI, OverseerrAPI, ProwlarrAPI,
                           JDownloaderAPI, QBittorrentAPI, PlexAPI, TautulliAPI, BazarrAPI,
-                          ProxmoxAPI, PfSenseAPI, ServiceAPI)
+                          ProxmoxAPI, PfSenseAPI, HomeDashAPI, ServiceAPI)
 
 _API_MAP = {
     'radarr': RadarrAPI,
@@ -18,25 +20,60 @@ _API_MAP = {
     'bazarr': BazarrAPI,
     'proxmox': ProxmoxAPI,
     'pfsense': PfSenseAPI,
+    'homedash': HomeDashAPI,
 }
 
 def _fetch_live_stats(service):
-    """Fetch stats directly from the service API, bypassing Redis cache."""
+    """Fetch stats directly from the service API, bypassing Redis cache.
+
+    This is used by the background polling task.  Calling it from a web view can
+    block user requests for several seconds if the remote service is slow or
+    unreachable, so higher‑level helpers should prefer the cache instead.
+    """
     api_class = _API_MAP.get(service.service_type, ServiceAPI)
     return api_class(service).fetch_stats()
+
+
+def _get_stats(service, force_live: bool = False) -> dict:
+    """Return stats for *service*.
+
+    If `force_live` is False the function first attempts to read a cached value
+    (see :mod:`services.tasks.poll_service_stats`).  If the cache is empty or
+    `force_live` is True it falls back to calling :func:`_fetch_live_stats` and
+    then stores the result in the cache for 60 seconds.
+    """
+    from django.core.cache import cache as _cache
+
+    cache_key = f"service_stats_{service.pk}"
+    if not force_live:
+        cached = _cache.get(cache_key)
+        if cached is not None:
+            return cached
+
+    stats = _fetch_live_stats(service)
+    _cache.set(cache_key, stats, timeout=60)
+    return stats
 
 def index_view(request):
     services = Service.objects.filter(is_active=True).order_by('name')
     return render(request, 'index.html', {'services': services, 'total_services': services.count()})
 
 def widget_update(request, pk):
-    """Returns the rendered widget template for a specific service (live, no cache)."""
+    """Return the rendered widget template for a specific service.
+
+    This view is hit via HTMX polling on the index page; by default it reads
+    from the cache so that dashboard rendering remains snappy.  The cache is
+    populated every minute by ``services.tasks.poll_service_stats``.  If the
+    service record vanishes we return an empty response so HTMX removes the
+    enclosing element.
+    """
     try:
         service = Service.objects.get(pk=pk, is_active=True)
     except Service.DoesNotExist:
-        return render(request, 'partials/widget_error.html', {'error': 'Service not found'})
+        from django.http import HttpResponse
+        return HttpResponse('')
 
-    stats = _fetch_live_stats(service)
+    stats = _get_stats(service)
 
     template_name = f'widgets/{service.service_type}.html'
     from django.template.loader import get_template
@@ -113,6 +150,80 @@ def settings_clear_cache(request):
         f'<span class="{colour} text-sm">{msg}</span>',
         content_type='text/html',
     )
+
+
+def settings_backup(request):
+    """Create a JSON backup of all service configs and return it as a download."""
+    import subprocess, datetime, os
+    from django.http import HttpResponse, HttpResponseNotAllowed
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(['POST'])
+    try:
+        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        backup_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'backups')
+        os.makedirs(backup_dir, exist_ok=True)
+        backup_path = os.path.join(backup_dir, f'homedash_backup_{timestamp}.json')
+
+        result = subprocess.run(
+            ['python', 'manage.py', 'dumpdata',
+             '--natural-foreign', '--natural-primary',
+             '--exclude=contenttypes', '--exclude=auth.permission',
+             '-o', backup_path],
+            capture_output=True, text=True,
+            cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        )
+        if result.returncode != 0:
+            raise RuntimeError(result.stderr.strip() or 'dumpdata failed')
+
+        with open(backup_path, 'rb') as f:
+            data = f.read()
+
+        response = HttpResponse(data, content_type='application/json')
+        response['Content-Disposition'] = f'attachment; filename="homedash_backup_{timestamp}.json"'
+        return response
+    except Exception as exc:
+        return HttpResponse(
+            f'<span class="text-destructive text-sm">Backup failed: {exc}</span>',
+            content_type='text/html',
+        )
+
+
+def settings_restore(request):
+    """Restore service configs from an uploaded JSON backup file."""
+    import json as _json_mod, os
+    from django.http import HttpResponse, HttpResponseNotAllowed
+    from django.core.management import call_command
+    from io import StringIO
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(['POST'])
+    try:
+        uploaded = request.FILES.get('backup_file')
+        if not uploaded:
+            raise ValueError('No file uploaded.')
+        if not uploaded.name.endswith('.json'):
+            raise ValueError('File must be a .json backup.')
+
+        raw = uploaded.read().decode('utf-8')
+        # Validate it's valid JSON
+        _json_mod.loads(raw)
+
+        # Save to temp file then loaddata
+        import tempfile
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as tmp:
+            tmp.write(raw)
+            tmp_path = tmp.name
+
+        out = StringIO()
+        call_command('loaddata', tmp_path, stdout=out, stderr=out)
+        os.unlink(tmp_path)
+
+        from django.http import HttpResponseRedirect
+        return HttpResponseRedirect('/settings/?restored=1')
+    except Exception as exc:
+        return HttpResponse(
+            f'<span class="text-destructive text-sm">Restore failed: {exc}</span>',
+            content_type='text/html',
+        )
 
 
 def qbittorrent_live(request, pk):
@@ -305,12 +416,76 @@ def notifications_dot(request):
     )
 
 
+def _append_traffic_point(pk, point, now):
+    """Append a bytes/sec data point to all pfSense traffic time series."""
+    # (key_suffix, max_points, min_seconds_between_points)
+    series_cfg = [
+        ('live',  60,  0),      # every poll (~5s), keep 60 → ~5 min window
+        ('day',  288, 300),     # every 5 min → 24 h
+        ('week', 336, 1800),    # every 30 min → 7 days
+        ('month',360, 7200),    # every 2 h → 30 days
+    ]
+    for suffix, max_pts, min_interval in series_cfg:
+        key = f'pfsense_traffic_{suffix}_{pk}'
+        series = cache.get(key) or []
+        if min_interval == 0 or not series or (now - series[-1]['t']) >= min_interval:
+            series.append(point)
+            if len(series) > max_pts:
+                series = series[-max_pts:]
+            cache.set(key, series, 86400 * 32)
+
+
+def pfsense_traffic(request, pk):
+    """JSON endpoint: fetch live WAN bytes/sec and update Redis time series.
+
+    Called by the browser every 5 s.  Also serves accumulated series for the
+    day/week/month tabs without making a new pfSense API call.
+    """
+    from django.shortcuts import get_object_or_404
+    service = get_object_or_404(Service, pk=pk, is_active=True)
+    period  = request.GET.get('period', 'live')
+
+    now = int(_time.time())
+
+    # Only hit pfSense API on live polls (not when switching tabs)
+    if period == 'live':
+        api = PfSenseAPI(service)
+        iface_data = api._get('status/interfaces')
+        if iface_data and iface_data.get('code') == 200:
+            ifaces = iface_data.get('data') or []
+            wan = next((i for i in ifaces if i.get('name') == 'wan'), None) or (ifaces[0] if ifaces else None)
+            if wan:
+                curr_in  = wan.get('inbytes',  0) or 0
+                curr_out = wan.get('outbytes', 0) or 0
+                prev_key = f'pfsense_traffic_prev_{pk}'
+                prev = cache.get(prev_key)
+                if prev and curr_in >= prev['in'] and curr_out >= prev['out']:
+                    dt = now - prev['t']
+                    if dt > 0:
+                        point = {
+                            't':   now,
+                            'in':  int((curr_in  - prev['in'])  / dt),
+                            'out': int((curr_out - prev['out']) / dt),
+                        }
+                        _append_traffic_point(pk, point, now)
+                cache.set(prev_key, {'t': now, 'in': curr_in, 'out': curr_out}, 7200)
+
+    series = cache.get(f'pfsense_traffic_{period}_{pk}') or []
+    return JsonResponse({'series': series, 'period': period})
+
+
 def service_dashboard(request, pk):
-    """View for a dedicated internal dashboard for a specific service (live, no cache)."""
+    """View for a dedicated internal dashboard for a specific service.
+
+    This view relies on cached stats so that the page renders quickly even if
+    the target service (e.g. pfSense) is experiencing latency.  Live data is
+    still available by hitting the "Refresh stats" button on the page, which
+    can call the helper with `force_live=True` if you add that feature later.
+    """
     from django.shortcuts import get_object_or_404
     service = get_object_or_404(Service, pk=pk, is_active=True)
 
-    stats = _fetch_live_stats(service)
+    stats = _get_stats(service)
 
     template_name = f'dashboards/{service.service_type}.html'
     from django.template.loader import get_template
@@ -320,4 +495,7 @@ def service_dashboard(request, pk):
     except TemplateDoesNotExist:
         template_name = 'dashboards/generic.html'
 
-    return render(request, template_name, {'service': service, 'stats': stats})
+    ctx = {'service': service, 'stats': stats}
+    if service.service_type == 'pfsense':
+        ctx['traffic_periods'] = [('live','Live'),('day','24h'),('week','7d'),('month','30d')]
+    return render(request, template_name, ctx)

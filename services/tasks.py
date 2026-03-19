@@ -1,7 +1,7 @@
 from celery import shared_task
 from django.core.cache import cache
 from .models import Service
-from .api import RadarrAPI, SonarrAPI, TrueNASAPI, OverseerrAPI, ProwlarrAPI, JDownloaderAPI, QBittorrentAPI, PlexAPI, TautulliAPI, BazarrAPI, ProxmoxAPI, PfSenseAPI, ServiceAPI
+from .api import RadarrAPI, SonarrAPI, TrueNASAPI, OverseerrAPI, ProwlarrAPI, JDownloaderAPI, QBittorrentAPI, PlexAPI, TautulliAPI, BazarrAPI, ProxmoxAPI, PfSenseAPI, HomeDashAPI, ServiceAPI
 
 @shared_task
 def poll_service_stats():
@@ -25,6 +25,7 @@ def poll_service_stats():
             'bazarr': BazarrAPI,
             'proxmox': ProxmoxAPI,
             'pfsense': PfSenseAPI,
+            'homedash': HomeDashAPI,
         }
 
         api_class = api_map.get(service.service_type, ServiceAPI)
