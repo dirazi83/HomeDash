@@ -1,6 +1,7 @@
 <p align="center">
-  <img src="https://github.com/dirazi83/HomeDash/blob/main/static/img/logo.png?raw=true" alt="HomeDash Logo" width="140">
+  <img src="https://github.com/dirazi83/HomeDash/blob/main/static/img/3d-2.png?raw=true" alt="HomeDash Logo" width="500">
 </p>
+
 
 <h1 align="center">HomeDash</h1>
 
