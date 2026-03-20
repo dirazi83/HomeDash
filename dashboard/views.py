@@ -233,7 +233,6 @@ def settings_check_update(request):
     from datetime import datetime
 
     build_date_str = os.environ.get('BUILD_DATE', '')
-    webhook_configured = bool(os.environ.get('PORTAINER_WEBHOOK_URL', ''))
 
     update_btn = (
         '<button hx-post="/settings/apply-update/" hx-target="#update-result" hx-swap="innerHTML" '
@@ -241,9 +240,6 @@ def settings_check_update(request):
         'class="mt-2 inline-flex items-center gap-2 rounded-md bg-amber-500 hover:bg-amber-600 '
         'text-white h-8 px-3 text-xs font-medium transition-colors">'
         'Update Now</button>'
-    ) if webhook_configured else (
-        '<p class="mt-2 text-xs text-muted-foreground">To enable one-click updates, add '
-        '<code class="bg-muted px-1 rounded">PORTAINER_WEBHOOK_URL</code> to your stack environment.</p>'
     )
 
     try:
@@ -276,30 +272,29 @@ def settings_check_update(request):
 
 
 def settings_apply_update(request):
-    """Trigger a Portainer stack redeploy via webhook."""
+    """Trigger a Watchtower HTTP API update for labelled containers."""
     import urllib.request, os
     from django.http import HttpResponse, HttpResponseNotAllowed
 
     if request.method != 'POST':
         return HttpResponseNotAllowed(['POST'])
 
-    webhook_url = os.environ.get('PORTAINER_WEBHOOK_URL', '')
-    if not webhook_url:
-        return HttpResponse(
-            '<span class="text-destructive text-xs">PORTAINER_WEBHOOK_URL not configured.</span>',
-            content_type='text/html',
-        )
-
+    token = os.environ.get('WATCHTOWER_TOKEN', 'homedash-update-token')
     try:
-        req = urllib.request.Request(webhook_url, method='POST', data=b'')
+        req = urllib.request.Request(
+            'http://watchtower:8080/v1/update',
+            method='POST',
+            data=b'',
+            headers={'Authorization': f'Bearer {token}'},
+        )
         with urllib.request.urlopen(req, timeout=15) as resp:
             status = resp.status
         if status in (200, 204):
             html = '<span class="text-emerald-500 text-xs font-medium">Update triggered — containers will restart shortly with the new image.</span>'
         else:
-            html = f'<span class="text-destructive text-xs">Webhook returned unexpected status {status}.</span>'
+            html = f'<span class="text-destructive text-xs">Watchtower returned status {status}.</span>'
     except Exception as exc:
-        html = f'<span class="text-destructive text-xs">Failed to reach webhook: {exc}</span>'
+        html = f'<span class="text-destructive text-xs">Could not reach Watchtower: {exc}</span>'
 
     return HttpResponse(html, content_type='text/html')
 

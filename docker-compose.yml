@@ -42,6 +42,7 @@ services:
       ADMIN_USER:             ${ADMIN_USER:-admin}
       ADMIN_PASSWORD:         ${ADMIN_PASSWORD:-admin}
       ADMIN_EMAIL:            ${ADMIN_EMAIL:-admin@homedash.local}
+      WATCHTOWER_TOKEN:       ${WATCHTOWER_TOKEN:-homedash-update-token}
     depends_on:
       db:
         condition: service_healthy
@@ -49,6 +50,8 @@ services:
         condition: service_started
     volumes:
       - homedash_backups:/app/backups
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
 
   celery:
     image: med10/homedash:latest
@@ -72,6 +75,8 @@ services:
         condition: service_started
       web:
         condition: service_started
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
 
   celery-beat:
     image: med10/homedash:latest
@@ -92,6 +97,19 @@ services:
       - db
       - redis
       - web
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  watchtower:
+    image: containrrr/watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      WATCHTOWER_HTTP_API_UPDATE: "true"
+      WATCHTOWER_HTTP_API_TOKEN:  ${WATCHTOWER_TOKEN:-homedash-update-token}
+      WATCHTOWER_LABEL_ENABLE:    "true"
+      WATCHTOWER_CLEANUP:         "true"
 
 volumes:
   postgres_data:
