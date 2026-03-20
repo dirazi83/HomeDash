@@ -1,5 +1,6 @@
 from celery import shared_task
 from django.core.cache import cache
+from django.utils import timezone
 from .models import Service
 from .api import RadarrAPI, SonarrAPI, TrueNASAPI, OverseerrAPI, ProwlarrAPI, JDownloaderAPI, QBittorrentAPI, PlexAPI, TautulliAPI, BazarrAPI, ProxmoxAPI, PfSenseAPI, HomeDashAPI, ServiceAPI
 
@@ -33,6 +34,13 @@ def poll_service_stats():
 
         # Fetch complete stats
         stats = api.fetch_stats()
+
+        # Persist online status and last_checked to DB
+        is_online = stats.get('is_online', False)
+        if service.is_online != is_online:
+            service.is_online = is_online
+            service.last_checked = timezone.now()
+            service.save(update_fields=['is_online', 'last_checked'])
 
         # Append UI rendering metadata
         stats.update({
