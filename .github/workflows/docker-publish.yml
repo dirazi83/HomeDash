@@ -32,5 +32,7 @@ jobs:
           tags: |
             med10/homedash:latest
             med10/homedash:${{ github.sha }}
+          build-args: |
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

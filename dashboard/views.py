@@ -226,6 +226,42 @@ def settings_restore(request):
         )
 
 
+def settings_check_update(request):
+    """Check Docker Hub for a newer image and return an HTMX snippet."""
+    import urllib.request, json, os
+    from django.http import HttpResponse
+    from datetime import datetime
+
+    build_date_str = os.environ.get('BUILD_DATE', '')
+    try:
+        url = 'https://hub.docker.com/v2/repositories/med10/homedash/tags/latest'
+        req = urllib.request.Request(url, headers={'Accept': 'application/json'})
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            data = json.loads(resp.read())
+        last_pushed = data.get('tag_last_pushed', '')
+        if not last_pushed:
+            raise ValueError('No push date from Docker Hub')
+
+        pushed_dt = datetime.fromisoformat(last_pushed.replace('Z', '+00:00'))
+        pushed_str = pushed_dt.strftime('%Y-%m-%d %H:%M UTC')
+
+        if build_date_str and build_date_str != 'unknown':
+            build_dt = datetime.fromisoformat(build_date_str.replace('Z', '+00:00'))
+            if pushed_dt > build_dt:
+                html = (
+                    f'<span class="text-amber-400 text-xs font-medium">'
+                    f'Update available — pushed {pushed_str}. Pull and redeploy to update.</span>'
+                )
+            else:
+                html = '<span class="text-emerald-500 text-xs font-medium">You are up to date.</span>'
+        else:
+            html = f'<span class="text-xs text-muted-foreground">Latest image pushed {pushed_str}.</span>'
+    except Exception:
+        html = '<span class="text-xs text-destructive">Could not reach Docker Hub.</span>'
+
+    return HttpResponse(html, content_type='text/html')
+
+
 def qbittorrent_live(request, pk):
     """Live torrent table — fetched directly from qBittorrent WebUI."""
     from django.shortcuts import get_object_or_404

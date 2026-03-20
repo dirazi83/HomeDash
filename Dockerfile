@@ -5,6 +5,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libpq-dev gcc curl \
     && rm -rf /var/lib/apt/lists/*
 
+ARG BUILD_DATE=unknown
+ENV BUILD_DATE=$BUILD_DATE
+
 WORKDIR /app
 
 # Install Python deps first (layer cache)

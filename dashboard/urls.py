@@ -14,6 +14,7 @@ urlpatterns = [
     path('settings/clear-cache/', views.settings_clear_cache, name='settings_clear_cache'),
     path('settings/backup/', views.settings_backup, name='settings_backup'),
     path('settings/restore/', views.settings_restore, name='settings_restore'),
+    path('settings/check-update/', views.settings_check_update, name='settings_check_update'),
     path('setup/', views.setup_wizard, name='setup'),
     path('terminal/', views.terminal_page, name='terminal'),
     path('notifications/', views.notifications_view, name='notifications'),

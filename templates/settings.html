@@ -296,6 +296,34 @@
             </div>
         </div>
 
+        <!-- Update Checker -->
+        <div class="rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden">
+            <div class="px-5 py-4 border-b border-border flex items-center gap-2">
+                <svg class="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+                <h3 class="text-sm font-medium tracking-tight">Updates</h3>
+            </div>
+            <div class="p-5">
+                <p class="text-xs text-muted-foreground mb-3">Check Docker Hub for a newer version of the HomeDash image.</p>
+                <div class="flex items-center gap-3">
+                    <button
+                        hx-get="{% url 'settings_check_update' %}"
+                        hx-target="#update-result"
+                        hx-swap="innerHTML"
+                        hx-indicator="#update-spinner"
+                        class="inline-flex items-center gap-2 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3 text-sm font-medium transition-colors">
+                        <svg id="update-spinner" class="htmx-indicator w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                        </svg>
+                        Check for Updates
+                    </button>
+                </div>
+                <div id="update-result" class="mt-3"></div>
+            </div>
+        </div>
+
         <!-- About -->
         <div class="rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden">
             <div class="px-5 py-4 border-b border-border">
