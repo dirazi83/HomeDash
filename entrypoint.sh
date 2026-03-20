@@ -3,18 +3,14 @@ set -e
 
 echo "[HomeDash] Waiting for PostgreSQL at ${DB_HOST}:${DB_PORT}..."
 until python -c "
-import psycopg2, os, sys
-try:
-    psycopg2.connect(
-        host=os.environ.get('DB_HOST','localhost'),
-        port=os.environ.get('DB_PORT','5432'),
-        dbname=os.environ.get('DB_NAME','homedash'),
-        user=os.environ.get('DB_USER','admin'),
-        password=os.environ.get('DB_PASSWORD','admin'),
-    )
-    sys.exit(0)
-except:
-    sys.exit(1)
+import psycopg2, os
+psycopg2.connect(
+    host=os.environ.get('DB_HOST','localhost'),
+    port=os.environ.get('DB_PORT','5432'),
+    dbname=os.environ.get('DB_NAME','homedash'),
+    user=os.environ.get('DB_USER','admin'),
+    password=os.environ.get('DB_PASSWORD','admin'),
+)
 " 2>/dev/null; do
     sleep 1
 done
