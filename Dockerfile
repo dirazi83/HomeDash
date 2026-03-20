@@ -17,8 +17,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy project
 COPY . .
 
-# Create dirs that must exist at runtime
-RUN mkdir -p /app/backups /app/staticfiles
+# Create dirs and collect static files
+RUN mkdir -p /app/backups /app/staticfiles \
+    && SECRET_KEY=build-only python manage.py collectstatic --noinput
 
 EXPOSE 3033
 
