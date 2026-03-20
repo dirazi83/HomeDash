@@ -233,6 +233,19 @@ def settings_check_update(request):
     from datetime import datetime
 
     build_date_str = os.environ.get('BUILD_DATE', '')
+    webhook_configured = bool(os.environ.get('PORTAINER_WEBHOOK_URL', ''))
+
+    update_btn = (
+        '<button hx-post="/settings/apply-update/" hx-target="#update-result" hx-swap="innerHTML" '
+        'hx-confirm="This will pull the latest image and restart all containers. Continue?" '
+        'class="mt-2 inline-flex items-center gap-2 rounded-md bg-amber-500 hover:bg-amber-600 '
+        'text-white h-8 px-3 text-xs font-medium transition-colors">'
+        'Update Now</button>'
+    ) if webhook_configured else (
+        '<p class="mt-2 text-xs text-muted-foreground">To enable one-click updates, add '
+        '<code class="bg-muted px-1 rounded">PORTAINER_WEBHOOK_URL</code> to your stack environment.</p>'
+    )
+
     try:
         url = 'https://hub.docker.com/v2/repositories/med10/homedash/tags/latest'
         req = urllib.request.Request(url, headers={'Accept': 'application/json'})
@@ -250,14 +263,43 @@ def settings_check_update(request):
             if pushed_dt > build_dt:
                 html = (
                     f'<span class="text-amber-400 text-xs font-medium">'
-                    f'Update available — pushed {pushed_str}. Pull and redeploy to update.</span>'
+                    f'Update available — pushed {pushed_str}.</span>{update_btn}'
                 )
             else:
                 html = '<span class="text-emerald-500 text-xs font-medium">You are up to date.</span>'
         else:
-            html = f'<span class="text-xs text-muted-foreground">Latest image pushed {pushed_str}.</span>'
+            html = f'<span class="text-xs text-muted-foreground">Latest image pushed {pushed_str}.</span>{update_btn}'
     except Exception:
         html = '<span class="text-xs text-destructive">Could not reach Docker Hub.</span>'
+
+    return HttpResponse(html, content_type='text/html')
+
+
+def settings_apply_update(request):
+    """Trigger a Portainer stack redeploy via webhook."""
+    import urllib.request, os
+    from django.http import HttpResponse, HttpResponseNotAllowed
+
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(['POST'])
+
+    webhook_url = os.environ.get('PORTAINER_WEBHOOK_URL', '')
+    if not webhook_url:
+        return HttpResponse(
+            '<span class="text-destructive text-xs">PORTAINER_WEBHOOK_URL not configured.</span>',
+            content_type='text/html',
+        )
+
+    try:
+        req = urllib.request.Request(webhook_url, method='POST', data=b'')
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            status = resp.status
+        if status in (200, 204):
+            html = '<span class="text-emerald-500 text-xs font-medium">Update triggered — containers will restart shortly with the new image.</span>'
+        else:
+            html = f'<span class="text-destructive text-xs">Webhook returned unexpected status {status}.</span>'
+    except Exception as exc:
+        html = f'<span class="text-destructive text-xs">Failed to reach webhook: {exc}</span>'
 
     return HttpResponse(html, content_type='text/html')
 
