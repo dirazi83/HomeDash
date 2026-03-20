@@ -2,7 +2,7 @@
 
 A modern, self-hosted home server dashboard built with **Django 6**, **HTMX**, **Tailwind CSS**, **Celery**, and **Redis**. Monitor all your self-hosted services from a single beautiful dark-mode interface.
 
-![HomeDash Dashboard](https://raw.githubusercontent.com/dirazi83/HomeDash/main/docs/screenshot.png)
+![HomeDash Dashboard](https://github.com/dirazi83/HomeDash/blob/main/static/img/logo.png)
 
 ## Features
 
