@@ -1,8 +1,19 @@
-# HomeDash
+<p align="center">
+  <img src="https://github.com/dirazi83/HomeDash/blob/main/static/img/logo.png?raw=true" alt="HomeDash Logo" width="140">
+</p>
 
-A modern, self-hosted home server dashboard built with **Django 6**, **HTMX**, **Tailwind CSS**, **Celery**, and **Redis**. Monitor all your self-hosted services from a single beautiful dark-mode interface.
+<h1 align="center">HomeDash</h1>
 
-![HomeDash Dashboard](https://github.com/dirazi83/HomeDash/blob/main/static/img/logo.png)
+<p align="center">
+  A modern, self-hosted home server dashboard built with <strong>Django 6</strong>, <strong>HTMX</strong>, <strong>Tailwind CSS</strong>, <strong>Celery</strong>, and <strong>Redis</strong>.<br>
+  Monitor all your self-hosted services from a single beautiful dark-mode interface.
+</p>
+
+<p align="center">
+  <a href="https://hub.docker.com/r/med10/homedash"><img src="https://img.shields.io/docker/pulls/med10/homedash?style=flat-square&logo=docker&label=Docker%20Pulls" alt="Docker Pulls"></a>
+  <a href="https://github.com/dirazi83/HomeDash/releases/tag/v1.0"><img src="https://img.shields.io/github/v/release/dirazi83/HomeDash?style=flat-square&label=Release" alt="Release"></a>
+  <a href="https://github.com/dirazi83/HomeDash/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="License"></a>
+</p>
 
 ## Features
 
