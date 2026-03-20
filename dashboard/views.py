@@ -290,7 +290,12 @@ def settings_apply_update(request):
         with urllib.request.urlopen(req, timeout=15) as resp:
             status = resp.status
         if status in (200, 204):
-            html = '<span class="text-emerald-500 text-xs font-medium">Update triggered — containers will restart shortly with the new image.</span>'
+            html = (
+                '<span class="text-emerald-500 text-xs font-medium block">Update triggered successfully.</span>'
+                '<span class="text-xs text-muted-foreground block mt-1">'
+                'celery &amp; celery-beat will restart automatically. '
+                'To complete the update, manually restart <strong>homedash-web-1</strong> in Portainer.</span>'
+            )
         else:
             html = f'<span class="text-destructive text-xs">Watchtower returned status {status}.</span>'
     except Exception as exc:
