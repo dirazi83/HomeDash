@@ -55,5 +55,23 @@ class Service(models.Model):
     def password(self, value):
         self.password_encrypted = encrypt_value(value) if value else ""
 
+    @property
+    def icon_slug(self):
+        """Returns the Simple Icons slug for this service type."""
+        return {
+            'radarr':       'radarr',
+            'sonarr':       'sonarr',
+            'qbittorrent':  'qbittorrent',
+            'plex':         'plex',
+            'proxmox':      'proxmox',
+            'pfsense':      'pfsense',
+            'truenas':      'truenas',
+            'overseerr':    'overseerr',
+            'prowlarr':     'prowlarr',
+            'tautulli':     'tautulli',
+            'bazarr':       'bazarr',
+            'jdownloader':  'jdownloader',
+        }.get(self.service_type, '')
+
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
