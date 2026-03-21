@@ -231,7 +231,12 @@ def settings_check_update(request):
     import urllib.request, json, os, re
     from django.http import HttpResponse
 
-    current_version = os.environ.get('APP_VERSION', 'unknown')
+    from pathlib import Path
+    version_file = Path(__file__).resolve().parent.parent / 'VERSION'
+    try:
+        current_version = version_file.read_text().strip()
+    except Exception:
+        current_version = os.environ.get('APP_VERSION', 'unknown')
 
     update_btn = (
         '<button hx-post="/settings/apply-update/" hx-target="#update-result" hx-swap="innerHTML" '
