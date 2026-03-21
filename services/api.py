@@ -1,4 +1,6 @@
 import requests
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 from django.utils import timezone
 from .models import Service, ServiceType
 from typing import Optional, Dict, List, Any
@@ -39,10 +41,20 @@ class ServiceAPI:
         self.base_url = service.url.rstrip('/')
         self.api_key = service.api_key
 
+    def _get(self, url, **kwargs):
+        kwargs.setdefault('timeout', 10)
+        kwargs.setdefault('verify', False)
+        return requests.get(url, **kwargs)
+
+    def _post(self, url, **kwargs):
+        kwargs.setdefault('timeout', 10)
+        kwargs.setdefault('verify', False)
+        return requests.post(url, **kwargs)
+
     def test_connection(self) -> bool:
         """Override in subclasses or test basic connectivity here."""
         try:
-            response = requests.get(self.base_url, timeout=5)
+            response = self._get(self.base_url)
             # Even a 401 Unauthorized means the port / server is responding
             is_online = response.status_code < 500
         except requests.RequestException:
@@ -81,7 +93,7 @@ class RadarrAPI(ServiceAPI):
     def test_connection(self) -> bool:
         try:
             url = f"{self.base_url}/api/v3/system/status"
-            response = requests.get(url, headers=self.headers, timeout=5)
+            response = self._get(url, headers=self.headers)
             is_online = response.ok
         except requests.RequestException:
             is_online = False
@@ -446,7 +458,7 @@ class SonarrAPI(ServiceAPI):
     def test_connection(self) -> bool:
         try:
             url = f"{self.base_url}/api/v3/system/status"
-            response = requests.get(url, headers=self.headers, timeout=5)
+            response = self._get(url, headers=self.headers)
             is_online = response.ok
         except requests.RequestException:
             is_online = False
@@ -642,7 +654,7 @@ class TrueNASAPI(ServiceAPI):
     def test_connection(self) -> bool:
         try:
             url = f"{self.base_url}/api/v2.0/system/info"
-            response = requests.get(url, headers=self.headers, timeout=5)
+            response = self._get(url, headers=self.headers)
             is_online = response.ok
         except requests.RequestException:
             is_online = False
@@ -812,7 +824,7 @@ class OverseerrAPI(ServiceAPI):
     def test_connection(self) -> bool:
         try:
             url = f"{self.base_url}/api/v1/status"
-            response = requests.get(url, headers=self.headers, timeout=5)
+            response = self._get(url, headers=self.headers)
             is_online = response.ok
         except requests.RequestException:
             is_online = False
@@ -1103,7 +1115,7 @@ class ProwlarrAPI(ServiceAPI):
     def test_connection(self) -> bool:
         try:
             url = f"{self.base_url}/api/v1/system/status"
-            response = requests.get(url, headers=self.headers, timeout=5)
+            response = self._get(url, headers=self.headers)
             is_online = response.ok
         except requests.RequestException:
             is_online = False
@@ -1448,6 +1460,7 @@ class PlexAPI(ServiceAPI):
                 params=params,
                 headers=self._HEADERS,
                 timeout=10,
+                verify=False,
             )
             return resp.json() if resp.ok else None
         except requests.RequestException:
@@ -1558,7 +1571,7 @@ class TautulliAPI(ServiceAPI):
     def _cmd(self, cmd: str, **params) -> Optional[Any]:
         params.update({'apikey': self.api_key, 'cmd': cmd})
         try:
-            resp = requests.get(f"{self.base_url}/api/v2", params=params, timeout=10)
+            resp = requests.get(f"{self.base_url}/api/v2", params=params, timeout=10, verify=False)
             if resp.ok:
                 data = resp.json()
                 if data.get('response', {}).get('result') == 'success':
@@ -1648,6 +1661,7 @@ class BazarrAPI(ServiceAPI):
                 url, params=params,
                 headers={'X-API-KEY': self.api_key, 'Accept': 'application/json'},
                 timeout=10,
+                verify=False,
             )
             return resp.json() if resp.ok else None
         except requests.RequestException:
