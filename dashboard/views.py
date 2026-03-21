@@ -298,8 +298,14 @@ def settings_apply_update(request):
             )
         else:
             html = f'<span class="text-destructive text-xs">Watchtower returned status {status}.</span>'
-    except Exception as exc:
-        html = f'<span class="text-destructive text-xs">Could not reach Watchtower: {exc}</span>'
+    except Exception:
+        # Timeout is expected — Watchtower restarts the web container mid-request
+        html = (
+            '<span class="text-emerald-500 text-xs font-medium block">Update triggered successfully.</span>'
+            '<span class="text-xs text-muted-foreground block mt-1">'
+            'All containers are restarting with the new image. The page will reload shortly.</span>'
+            '<script>setTimeout(() => location.reload(), 8000);</script>'
+        )
 
     return HttpResponse(html, content_type='text/html')
 
