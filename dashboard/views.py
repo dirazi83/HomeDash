@@ -227,12 +227,11 @@ def settings_restore(request):
 
 
 def settings_check_update(request):
-    """Check Docker Hub for a newer image and return an HTMX snippet."""
-    import urllib.request, json, os
+    """Check Docker Hub version tags for a newer release."""
+    import urllib.request, json, os, re
     from django.http import HttpResponse
-    from datetime import datetime
 
-    build_date_str = os.environ.get('BUILD_DATE', '')
+    current_version = os.environ.get('APP_VERSION', 'unknown')
 
     update_btn = (
         '<button hx-post="/settings/apply-update/" hx-target="#update-result" hx-swap="innerHTML" '
@@ -242,31 +241,36 @@ def settings_check_update(request):
         'Update Now</button>'
     )
 
+    def parse_ver(v):
+        return tuple(int(x) for x in v.split('.'))
+
     try:
-        url = 'https://hub.docker.com/v2/repositories/med10/homedash/tags/latest'
+        url = 'https://hub.docker.com/v2/repositories/med10/homedash/tags?page_size=25'
         req = urllib.request.Request(url, headers={'Accept': 'application/json'})
         with urllib.request.urlopen(req, timeout=8) as resp:
             data = json.loads(resp.read())
-        last_pushed = data.get('tag_last_pushed', '')
-        if not last_pushed:
-            raise ValueError('No push date from Docker Hub')
 
-        pushed_dt = datetime.fromisoformat(last_pushed.replace('Z', '+00:00'))
-        pushed_str = pushed_dt.strftime('%Y-%m-%d %H:%M UTC')
+        semver = re.compile(r'^\d+\.\d+\.\d+$')
+        tags = [t['name'] for t in data.get('results', []) if semver.match(t['name'])]
+        if not tags:
+            raise ValueError('No version tags found on Docker Hub yet')
 
-        if build_date_str and build_date_str != 'unknown':
-            build_dt = datetime.fromisoformat(build_date_str.replace('Z', '+00:00'))
-            if pushed_dt > build_dt:
-                html = (
-                    f'<span class="text-amber-400 text-xs font-medium">'
-                    f'Update available — pushed {pushed_str}.</span>{update_btn}'
-                )
-            else:
-                html = '<span class="text-emerald-500 text-xs font-medium">You are up to date.</span>'
+        latest = max(tags, key=parse_ver)
+
+        if current_version == 'unknown':
+            html = (
+                f'<span class="text-xs text-muted-foreground">'
+                f'Latest release: v{latest}. Redeploy to enable version tracking.</span>'
+            )
+        elif parse_ver(latest) > parse_ver(current_version):
+            html = (
+                f'<span class="text-amber-400 text-xs font-medium">'
+                f'Update available: v{latest} (you have v{current_version})</span>{update_btn}'
+            )
         else:
-            html = f'<span class="text-xs text-muted-foreground">Latest image pushed {pushed_str}.</span>{update_btn}'
-    except Exception:
-        html = '<span class="text-xs text-destructive">Could not reach Docker Hub.</span>'
+            html = f'<span class="text-emerald-500 text-xs font-medium">You are up to date (v{current_version})</span>'
+    except Exception as exc:
+        html = f'<span class="text-xs text-destructive">Could not check for updates: {exc}</span>'
 
     return HttpResponse(html, content_type='text/html')
 

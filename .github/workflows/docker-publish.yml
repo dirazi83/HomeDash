@@ -24,6 +24,10 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Read version
+        id: ver
+        run: echo "version=$(cat VERSION)" >> $GITHUB_OUTPUT
+
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
@@ -31,8 +35,9 @@ jobs:
           push: true
           tags: |
             med10/homedash:latest
-            med10/homedash:${{ github.sha }}
+            med10/homedash:${{ steps.ver.outputs.version }}
           build-args: |
             BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            APP_VERSION=${{ steps.ver.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

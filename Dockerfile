@@ -6,7 +6,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 ARG BUILD_DATE=unknown
+ARG APP_VERSION=unknown
 ENV BUILD_DATE=$BUILD_DATE
+ENV APP_VERSION=$APP_VERSION
 
 WORKDIR /app
 
